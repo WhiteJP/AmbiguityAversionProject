@@ -1,12 +1,11 @@
-var debugging = 0; 
 var subjectID = ""; s1 = ""; s2 = "";
 var gainorloss = "";
 var condition = "";
 var exp_data = {};
 var demographics = [];
 var ord = "";
-var vignettenumber = "";
-var vignetteAnswer = "";
+var vignetteNumber = [];
+var vignetteAnswer = [];
 
 // ********** START: this function runs automatically when the page is loaded
 $(document).ready(function () {
@@ -19,7 +18,7 @@ $(document).ready(function () {
     subjectID = s1.concat(s2);
     var x = Math.floor(Math.random() * 2);
     var y = Math.floor(Math.random() * 2);
-    var vignettenumber = Math.floor((Math.random() * 2) + 1);
+    vignetteNumber = Math.floor((Math.random() * 2) + 1);
         if (x===0) {
             gainorloss = 'G';
         } else {
@@ -30,7 +29,7 @@ $(document).ready(function () {
         } else {
             ord = 'B';
         } 
-    condition = gainorloss + vignettenumber + ord;
+    condition = gainorloss + vignetteNumber + ord;
     showDemographics();
 });
 
@@ -124,19 +123,18 @@ function showVignette() {
 // ********** VALIDATEVIGNETTE: checks that they have answered the question
 function validateVignette() {
   
-    vignetteAnswer = $('#vignette').serializeArray();
+    vignetteAnswer = $("input[name='choiceType']:checked").val();
 
     // test for empty answers
-    var ok = true;
-    if (vignetteAnswer.value === "") {
-      alert('Please answer the question.');
-      showVignette();
-    } else { 
+    if (vignetteAnswer=="aversion" || vignetteAnswer=="noaversion") {
       hideElements();
-      saveParticipantData()
-      showDebrief()
+      saveParticipantData();
+      showDebrief();
+    } else { 
+      alert('Please answer the question.');
+      showVignette;
     }
-    
+
 }
 
 
@@ -146,8 +144,9 @@ function saveParticipantData() {
     var nameStr = []; valStr = [];
     exp_data["subject"] = subjectID;
     exp_data["condition"] = condition;
-    exp_data["ord"] = answerOrder;
-    exp_data["gainorloss"] = currentPoints;
+    exp_data["vignetteType"] = gainorloss;
+    exp_data["vignetteNumber"]= vignetteNumber;
+    exp_data["answerOrder"] = ord;
     exp_data["vignetteAnswer"] = vignetteAnswer;
     for (i = 0; i < demographics.length; i++) {
         exp_data[demographics[i].name] = demographics[i].value;
@@ -159,11 +158,10 @@ function saveParticipantData() {
 
 // ********** SHOWDEBRIEF: shows the debrief text for those interested
 function showDebrief() {
-    hideElements();
-    var turkCode = s1 + Math.round(currentPoints/100).toString() + s2;
+    hideElements(); 
     $('#instructions').show();
     $('#instructions').load('html/debrief.html', function () {
-        $('#subid').text(turkCode);
+        $('#subid').text(subjectID);
     });
 }
 
@@ -183,18 +181,4 @@ function hideElements() {
   $('div').hide();  // hides all divs
   $(':button').hide(); // hides all buttons
   $(':button').unbind(); // unbinds all buttons
-}
-
-
-// ********** SHUFFLEARRAY: permute the values of array
-function shuffleArray(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex ;
-    while (0 !== currentIndex) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
-    }
-    return array;
 }
