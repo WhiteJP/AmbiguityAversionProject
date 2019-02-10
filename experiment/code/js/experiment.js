@@ -6,6 +6,8 @@ var demographics = [];
 var ord = "";
 var vignetteNumber = [];
 var vignetteAnswer = [];
+var dummyVignetteAnswer = [];
+var postQuestionsAnswers = [];
 
 // ********** START: this function runs automatically when the page is loaded
 $(document).ready(function () {
@@ -106,9 +108,76 @@ function showInstructions() {
     $('#instructions').show();
     $('#instructions').load('html/instructions.html');
     $('#next').show();
-    $('#next').click(showVignette);
+    $('#next').click(showInstructionChecks);
 }
 
+// ********** SHOWINSTRUCTIONCHECKS: asks the questions confirming they have read the instructions
+function showInstructionChecks() {
+  
+    hideElements();
+    $('#instructions').show();
+    $('#instructions').load('html/instructionchecks.html');    
+    $('#next').show();
+    $('#next').click(validateInstructionChecks);
+}
+
+
+// ********** VALIDATEINSTRUCTIONCHECKS: makes sure they understood the instructions 
+function validateInstructionChecks() {
+  
+    instructionChecks = $('#instr').serializeArray();
+
+    var ok = true;
+    if (instructionChecks.length < 3) {
+      alert('Please fill out all questions.');
+      ok = false;
+      
+    } else {
+      
+      for (var i = 0; i < instructionChecks.length; i++) {
+        // check for incorrect responses
+        if(instructionChecks[i].value === "incorrect") {
+            alert('At least one answer was incorrect; please read the instructions and try again.');
+            ok = false;
+            break;
+        }
+      }
+    }
+
+    // goes to next section
+    if (!ok) {
+        showInstructions(); 
+    } else {
+        hideElements();
+        showDummyVignette(); 
+    }
+}
+
+// ********** SHOWVIGNETTE: Takes participant to vignette
+function showDummyVignette() {
+    
+    hideElements();
+    $('#instructions').show();
+    $('#instructions').load('html/dummyvignette.html');
+    $('#next').show();
+    $('#next').click(validateDummyVignette);
+}
+
+// ********** VALIDATEDUMMYVIGNETTE: checks that they have answered the question
+function validateDummyVignette() {
+  
+    dummyVignetteAnswer = $("input[name='dummyvignette']:checked").val();
+
+    // test for empty answers
+    if (dummyVignetteAnswer > 0 && dummyVignetteAnswer < 8)  {
+      hideElements();
+      showVignette();
+    } else { 
+      alert('Please answer the question.');
+      showDummyVignette;
+    }
+
+}
 
 // ********** SHOWVIGNETTE: Takes participant to vignette
 function showVignette() {
@@ -123,13 +192,12 @@ function showVignette() {
 // ********** VALIDATEVIGNETTE: checks that they have answered the question
 function validateVignette() {
   
-    vignetteAnswer = $("input[name='choiceType']:checked").val();
+    vignetteAnswer = $("input[name='vignette']:checked").val();
 
     // test for empty answers
-    if (vignetteAnswer=="aversion" || vignetteAnswer=="noaversion") {
+    if (vignetteAnswer > 0 && vignetteAnswer < 8) {
       hideElements();
-      saveParticipantData();
-      showDebrief();
+      showPostQuestions();
     } else { 
       alert('Please answer the question.');
       showVignette;
@@ -137,6 +205,31 @@ function validateVignette() {
 
 }
 
+// ********** SHOWPOSTQUESTIONS: Takes participant to vignette
+function showPostQuestions() {
+    
+    $('#instructions').show();
+    $('#instructions').load('html/postquestions.html');
+    $('#next').show();
+    $('#next').click(validatePostQuestions);
+}
+
+// ********** VALIDATEPOSTQUESTIONS: checks that they have answered the question
+function validatePostQuestions() {
+  
+    postQuestionsAnswers = $('#postquestions').serializeArray();
+
+    // test for empty answers   
+    if (postQuestionsAnswers[0].value === "" || postQuestionsAnswers[1].value === "") {
+      alert('Please answer the first two questions.');
+      showPostQuestions;
+    } else { 
+      hideElements();
+      saveParticipantData();
+      showDebrief();
+    }
+
+}
 
 // ********** SAVEPARTICIPANTDATA: saves all the participant-level data
 function saveParticipantData() {
@@ -147,9 +240,13 @@ function saveParticipantData() {
     exp_data["vignetteType"] = gainorloss;
     exp_data["vignetteNumber"]= vignetteNumber;
     exp_data["answerOrder"] = ord;
+    exp_data["dummyVignetteAnswer"] = dummyVignetteAnswer;
     exp_data["vignetteAnswer"] = vignetteAnswer;
     for (i = 0; i < demographics.length; i++) {
-        exp_data[demographics[i].name] = demographics[i].value;
+        exp_data[demographics[i].name] = demographics[i].value; 
+    }
+    for (i = 0; i < postQuestionsAnswers.length; i++) {
+        exp_data[postQuestionsAnswers[i].name] = postQuestionsAnswers[i].value;
     }
 
     console.log(exp_data);
