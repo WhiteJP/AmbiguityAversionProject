@@ -4,10 +4,8 @@ var condition = "";
 var exp_data = {};
 var demographics = [];
 var ord = "";
-var vignetteNumber = [];
+var vignetteNumber = "";
 var vignetteAnswer = [];
-var dummyVignetteAnswer = [];
-var postQuestionsAnswers = [];
 
 // ********** START: this function runs automatically when the page is loaded
 $(document).ready(function () {
@@ -20,7 +18,7 @@ $(document).ready(function () {
     subjectID = s1.concat(s2);
     var x = Math.floor(Math.random() * 2);
     var y = Math.floor(Math.random() * 2);
-    vignetteNumber = Math.floor((Math.random() * 2) + 1);
+    var vignetteNumber = Math.floor((Math.random() * 2) + 1);
         if (x===0) {
             gainorloss = 'G';
         } else {
@@ -108,7 +106,7 @@ function showInstructions() {
     $('#instructions').show();
     $('#instructions').load('html/instructions.html');
     $('#next').show();
-    $('#next').click(showInstructionChecks);
+    $('#next').click(showVignette);
 }
 
 // ********** SHOWINSTRUCTIONCHECKS: asks the questions confirming they have read the instructions
@@ -128,7 +126,7 @@ function validateInstructionChecks() {
     instructionChecks = $('#instr').serializeArray();
 
     var ok = true;
-    if (instructionChecks.length < 3) {
+    if (instructionChecks.length < 4) {
       alert('Please fill out all questions.');
       ok = false;
       
@@ -141,6 +139,18 @@ function validateInstructionChecks() {
             ok = false;
             break;
         }
+        // check for empty answers 
+        if (instructionChecks[i].value === "") {
+            alert('Please fill out all questions.');
+            ok = false;
+            break;    
+        }
+        // check that they got their savingsType correct
+        if (instructionChecks[i].name === "question4" && Number(instructionChecks[i].value) != savingsType) {
+            alert('At least one answer was incorrect; please read the instructions and try again.');
+            ok = false;
+            break;    
+        }
       }
     }
 
@@ -149,35 +159,8 @@ function validateInstructionChecks() {
         showInstructions(); 
     } else {
         hideElements();
-        showDummyVignette(); 
+        showOneShotTask(); 
     }
-}
-
-// ********** SHOWVIGNETTE: Takes participant to vignette
-function showDummyVignette() {
-    
-    hideElements();
-    $('#instructions').show();
-    $('#instructions').load('html/dummyvignette.html');
-    $('#next').show();
-    $('#next').click(validateDummyVignette);
-}
-
-// ********** VALIDATEDUMMYVIGNETTE: checks that they have answered the question
-function validateDummyVignette() {
-  
-    dummyVignetteAnswer = $("input[name='dummyvignette']:checked").val();
-
-    // test for empty answers
-    if (dummyVignetteAnswer > 0 && dummyVignetteAnswer < 8)  {
-      hideElements();
-      showVignette();
-    } else { 
-      alert('Please answer the question.');
-      showDummyVignette;
-    }
-
-}
 
 // ********** SHOWVIGNETTE: Takes participant to vignette
 function showVignette() {
@@ -192,12 +175,13 @@ function showVignette() {
 // ********** VALIDATEVIGNETTE: checks that they have answered the question
 function validateVignette() {
   
-    vignetteAnswer = $("input[name='vignette']:checked").val();
+    vignetteAnswer = $("input[name='choiceType']:checked").val();
 
     // test for empty answers
-    if (vignetteAnswer > 0 && vignetteAnswer < 8) {
+    if (vignetteAnswer=="aversion" || vignetteAnswer=="noaversion") {
       hideElements();
-      showPostQuestions();
+      saveParticipantData();
+      showDebrief();
     } else { 
       alert('Please answer the question.');
       showVignette;
@@ -205,31 +189,6 @@ function validateVignette() {
 
 }
 
-// ********** SHOWPOSTQUESTIONS: Takes participant to vignette
-function showPostQuestions() {
-    
-    $('#instructions').show();
-    $('#instructions').load('html/postquestions.html');
-    $('#next').show();
-    $('#next').click(validatePostQuestions);
-}
-
-// ********** VALIDATEPOSTQUESTIONS: checks that they have answered the question
-function validatePostQuestions() {
-  
-    postQuestionsAnswers = $('#postquestions').serializeArray();
-
-    // test for empty answers   
-    if (postQuestionsAnswers[0].value === "" || postQuestionsAnswers[1].value === "") {
-      alert('Please answer the first two questions.');
-      showPostQuestions;
-    } else { 
-      hideElements();
-      saveParticipantData();
-      showDebrief();
-    }
-
-}
 
 // ********** SAVEPARTICIPANTDATA: saves all the participant-level data
 function saveParticipantData() {
@@ -237,16 +196,12 @@ function saveParticipantData() {
     var nameStr = []; valStr = [];
     exp_data["subject"] = subjectID;
     exp_data["condition"] = condition;
-    exp_data["vignetteType"] = gainorloss;
-    exp_data["vignetteNumber"]= vignetteNumber;
-    exp_data["answerOrder"] = ord;
-    exp_data["dummyVignetteAnswer"] = dummyVignetteAnswer;
+    exp_data["gainorloss"] = vignetteType;
+    exp_data["vignetteNmber"]= vignetteNumber;
+    exp_data["ord"] = answerOrder;
     exp_data["vignetteAnswer"] = vignetteAnswer;
     for (i = 0; i < demographics.length; i++) {
-        exp_data[demographics[i].name] = demographics[i].value; 
-    }
-    for (i = 0; i < postQuestionsAnswers.length; i++) {
-        exp_data[postQuestionsAnswers[i].name] = postQuestionsAnswers[i].value;
+        exp_data[demographics[i].name] = demographics[i].value;
     }
 
     console.log(exp_data);
