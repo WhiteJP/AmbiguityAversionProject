@@ -7,7 +7,7 @@
     B.  Either stock X or Y will skyrocket in value but the exact probability for each is unknown.
 <br><br/>
 
-2. You are currently unemployed, but have just been offered two jobs  from two different companies: company X and company Y. Both companies compete within an extremely small market so you know that only one of them will end up being successful in the long run; the other is almost certain to go out of business within a few years. Which of the following situations would you rather be in?
+2. You are currently unemployed, but have just been offered two jobs from two different companies: company X and company Y. Both companies compete within an extremely small market so you know that only one of them will end up being successful in the long run; the other is almost certain to go out of business within a few years. Which of the following situations would you rather be in?
     A.	There is a 50% chance that company X will be successful and a 50% chance that company Y will be successful. 
     B.	Either company X or company Y will be successful but the exact probability for each is unknown.
 <br><br/>
@@ -22,7 +22,7 @@
     B.	Either person X or person Y is interested but the exact probability for each is unknown.
 <br><br/> 
 
-5.	You are a competitive runner. Your coach has recently returned from a sports science conference and advises you that she has been informed of two new training protocols: protocol X and protocol Y. One of these training protocols will certainly result in a significant and long-lasting improvements, but only in different people; unfortunately it so far impossible to determine ahead of time which people will benefit  fron which. The protocols are are mutually exclusive (i.e. they can’t both be completed at the same time): you must choose one. Which of the following situations would you prefer?
+5.	You are a competitive runner. Your coach has recently returned from a sports science conference and advises you that she has been informed of two new training protocols: protocol X and protocol Y. One of these training protocols will certainly result in significant and long-lasting improvements, but only in different people; unfortunately it so far impossible to determine ahead of time which people will benefit  fron which. The protocols are are mutually exclusive (i.e. they can’t both be completed at the same time): you must choose one. Which of the following situations would you prefer?
     A.	There is a 50% chance that training protocol X will help you and a 50% chance that training protocol Y will help you. 
     B.	Either training protocol X or Y will help you but the exact probability for each is unknown.
 <br><br/> 
@@ -45,6 +45,21 @@
 9. Your child has extreme talent and interest in two things: X and Y. You have heard that in a few years a local rich person is planning on funding a very generous scholarship for talented young people in either X or Y but they are not revealing which. In order for your child to be eligible they will need to receive specialised training starting now, and they are sufficiently time-consuming that they need to pick just one. Which of the following situations would you rather be in?
     A.	There is a 50% chance that X will get the generous scholarship, and a 50% chance that Y will get the generous scholarship.
     B.	Either X or Y will get the generous scholarship, but the exact probability for each is unknown.  
+<br><br/> 
+
+10. At a casino, there is an urn on the table which contains 1000 balls. Each of these 1000 balls is either red or yellow. You are to randomly select one of these balls from the urn and, if you selct a red ball, you will win $1000. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that the selected ball will be red, and a 50% chance the selected ball will be yellow. 
+    B.	The selected ball will be red or yellow, but the exact probability for each is unknown.  
+<br><br/> 
+
+11. You have one day left of your vacation, and within a few hours' driving distance from your hotel are two different wildlife preserves: preserve X and preserve Y. There is an rare bird that you really want to see that lives in the area. However, this rare bird is only ever seen at one of these preserves at a time, and you do not have time to go to both. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that the rare bird will be at preserve X, and a 50% chance that the rare bird will be at preserve Y. 
+    B.	The rare bird will be at either preserve X or preserve Y, but the exact probability for each is unknown.  
+<br><br/> 
+
+12. You are a medical student and final exams are two weeks away. You have recently been told about two study drugs, drug X and drug Y, which if taken during study can significantly improve memory retention. One of these drugs is sure to work, but for different people; unfortunately it so far impossible to determine ahead of time which people will benefit from which. Further, both drugs are slow acting, so you only have time to try one before your exams commence. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that drug X will improve your memory retention, and a 50% chance that drug Y will improve your memory retention. 
+    B.	Either drug X or Drug Y will improve your memory retention, but the exact probability for each is unknown.  
 <br><br/> 
 
 ## 'Loss' vignettes
@@ -77,4 +92,35 @@
 6. Your friend has set you up on a blind date. When you arrive at the arranged meeting place you notice that there are two people who fit the description that your friend has given to you. You find one of these people extremely unattractive, while the other one is of average attractiveness. Before you find out who is your date, which of the following situations would you rather be in?
     A.	There is a 50% chance that the unattractive person is your date, and a 50% chance that the average person is your date. 
     B.	Either the attractive person or the average person is your date, but the exact probability for each is unknown. 
+<br><br/> 
+
+7. At a casino, there is an urn on the table which contains 1000 balls. Each of these 1000 balls is either red or yellow. You are to randomly select one of these balls from the urn and, if you selct a red ball, you will lose a $1000. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that the selected ball will be red, and a 50% chance the selected ball will be yellow. 
+    B.	The selected ball will be red or yellow, but the exact probability for each is unknown.  
+<br><br/> 
+
+8. You have left your car in an uncovered airport carpark while you are travelling to a far away city for work. Since you left, you have heard news that a large hailstorm is going to strike somewhere in the surrounding region, but it is not certain exactly where. If this hailstorm hits the airport carpark, your car will sustain serious and costly damage (you are uninsured). Which of the following situations would you rather be in?
+    A.	There is a 50% chance that the hailstorm will strike your car, and a 50% chance that it won't.
+    B.	The hailstorm will either strike your car or it will not, but the exact probability for each is unknown.  
+<br><br/> 
+
+9. You are the five-term mayor of your city and you are again running for re-election, coming to the end of a long hard campaign.  You have scheduled a meeting with your campaign manager to talk about your prospects of losing the election. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that you will lose the election, and a 50% chance that you will not. 
+    B.	You will either lose the election or you will not, but the exact probability for each is unknown. 
+<br><br/> 
+
+10. You work at a bank which has two branches in your city: branch X and branch Y. Your boss has just offered you a transfer to branch Y. You can choose to reject this offer and stay at branch X, or accept it and move to branch Y. However, The bank's CEO has already announced that, within 2 years, one of these branches will be closed because the city is only big enough to sustain one branch. The employees of the closed branch will be made redundant. Which of the following situations would you rather be in?
+    A.	There is a 50% chance that branch X will be closed, and a 50% chance that branch Y will be closed.
+    B.	Either branch X or Y will be closed, but the exact probability for each is unknown.  
+<br><br/> 
+
+11. You are attending a social event when an important acquaintance comes over to you to initiate a friendly conversation.  This acquaintance calls you by your name, but you cannot remember theirs although you know it's either James or Peter. In any case, you avoid using thier name in an attempt to avoid an awkward situation. However, after noticing your avoidance to use his name, your acquaintance abruptly asks you: "do you remember my name? What is it?" Which of the following situations do you hope is true?
+    A.	There is a 50% chance that his name is James and a 50% chance that his name is Peter. 
+    B.	His name is either James or Peter, but the exact probabiliy for each is unknown. 
+<br>< br/> 
+
+12. You have just been offered a promotion at work along with the choice of becoming head of department X or head of department Y. Your boss tells you, however, that his boss is planning on slashing the budget of one of these departments to save company resources, but he does not know which one. Which of the following situations would you rather be in?
+    A.  There is a 50% chance that department X's budget will be slashed and a 50% chance that department Y's budget will be slashed.
+    B.  Either department X's budget or department Y's budget will be slashed but the exact probability for each is unknown.
+<br><br/> 
 
