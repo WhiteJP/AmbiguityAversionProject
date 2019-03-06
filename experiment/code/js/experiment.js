@@ -8,7 +8,36 @@ var vignetteNumber = "";
 var vignetteAnswer = [];
 var dummyVignetteAnswer = [];
 var postQuestionsAnswers = [];
-  
+var correctpostquestionanswer = "";
+var pqalist = {"G1":'It was about stocks, one of which was about to skyrocket in value.',
+              "G2": 'You were unemployed and considering two job offers.',
+              "G3": 'You had been offered a promotion at work with your choice of department.',
+              "G4": 'It was about a romantic interest in a friend of yours.',
+              "G5": 'You were a competitive runner considering the use of new training protocols.',
+              "G6": 'It was about two parties, one of which your crush was attending.',
+              "G7": 'You were buying a house and an amazing school had been planned for one of the neigbourhoods you were interesed in.',
+              "G8": 'You were on a blind date and there were two people who matched your dates description.',
+              "G9": 'Your child was extremely talented in two endeavours, one of which was to receive a generous scholarshiop in the coming years.',
+              "G10": 'You were about to randomly select a ball from an urn, with the chance to win $1000.',
+              "G11": 'It was about trying to spot a wild bird while on vacation.',
+              "G12": 'You were a student with upcoming exams considering study drugs.',
+              "L1": 'It was about stocks, one of which was about to plummet in value.',
+              "L2": 'You were bitten by a snake, but were unsure of which species.',
+              "L3": 'You had an insect infestation in your house but you were unsure which insect species.',
+              "L4": 'It was about a computer virus you had gotten.',
+              "L5": 'You had acquired a pathogen, but were unsure of its consequences.',
+              "L6": 'You were on a blind date and there were two people who matched your dates description.',
+              "L7": 'You were about to randomly select a ball from an urn, with the chance to lose $1000.',
+              "L8": 'You had left your car in an uncovered carpark, and a hailstorm threatened to damage it.',
+              "L9": 'You were the five-term mayor of a city about to discuss your prospects for re-electon.',
+              "L10": 'You were a bank employee moving to a new city who was offered a transfer to either of two branches.',
+              "L11": 'Your child was extremely talented in two endeavours, one of which was about to be discontinued at their school.',
+              "L12": 'You had been offered a promotion at work with your choice of department.'
+};
+var decoy1 = "You were planning your upcoming holiday, deciding which of two destinations to go to.";
+var decoy2 = "It was about a national sports event, and a bet you had placed on it.";
+var decoy3 = "You had been experiencing back pain, and your doctor had advised you that it had two possible causes.";
+
 // ********** START: this function runs automatically when the page is loaded
 $(document).ready(function () {
     
@@ -20,7 +49,7 @@ $(document).ready(function () {
     subjectID = s1.concat(s2);
     var x = Math.floor(Math.random() * 2);
     var y = Math.floor(Math.random() * 2);
-    vignetteNumber = Math.floor((Math.random() * 2) + 1);
+    vignetteNumber = Math.floor((Math.random() * 12) + 1);
         if (x===0) {
             gainorloss = 'G';
         } else {
@@ -32,6 +61,7 @@ $(document).ready(function () {
             ord = 'B';
         } 
     condition = gainorloss + vignetteNumber + ord;
+    correctpostquestionanswer = pqalist[gainorloss + vignetteNumber];
     showDemographics();
 });
 
@@ -106,13 +136,21 @@ function showConsent() {
     $('#next').click(showInstructions);
 }
 
-
 // ********** SHOWINSTRUCTIONS: gives some introductory information 
 function showInstructions() {
   
     hideElements();
     $('#instructions').show();
     $('#instructions').load('html/instructions.html');
+    $('#next').show();
+    $('#next').click(showInstructions2);
+}
+// ********** SHOWINSTRUCTIONS: gives some introductory information 
+function showInstructions2() {
+  
+    hideElements();
+    $('#instructions').show();
+    $('#instructions').load('html/instructions2.html');
     $('#next').show();
     $('#next').click(showInstructionChecks);
 }
@@ -188,7 +226,7 @@ function validateDummyVignette() {
 // ********** SHOWVIGNETTE: Takes participant to vignette
 function showVignette() {
     
-    var vignettehtml = 'html/vignette' + condition + '.html';
+    var vignettehtml = 'html/vignettes/vignette' + condition + '.html';
     $('#instructions').show();
     $('#instructions').load(vignettehtml);
     $('#next').show();
@@ -215,7 +253,12 @@ function validateVignette() {
 function showPostQuestions() {
 
     $('#instructions').show();
-    $('#instructions').load('html/postquestions.html');
+    $('#instructions').load('html/postquestions.html', function () {
+        $('#correctpqanswer').text(correctpostquestionanswer);
+        $('#decoy1').text(decoy1);
+        $('#decoy2').text(decoy2);
+        $('#decoy3').text(decoy3);
+    });
     $('#next').show();
     $('#next').click(validatePostQuestions);
 }
@@ -226,8 +269,8 @@ function validatePostQuestions() {
     postQuestionsAnswers = $('#postquestions').serializeArray();
 
     // test for empty answers   
-    if (!$("input[name='postquestion1']:checked").val() || !$("input[name='postquestion2']:checked").val()) {
-      alert('Please answer the first two questions.');
+    if (!$("input[name='postquestion1']:checked").val()) {
+      alert('Please answer the first question.');
       showPostQuestions;
     } else { 
       hideElements();
