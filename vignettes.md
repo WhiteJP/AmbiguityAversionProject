@@ -147,6 +147,7 @@ You are in the market to buy a house and have identified two that you really lik
     
     B.	The hailstorm either struck your car or it didn't, but the exact probability for each is unknown.  
 <br><br/> 
+[JPW note, this one is not in X/Y form]
 
 9. You are the five-term mayor of your city and you are again running for re-election, coming to the end of a long campaign against a surprisingly powerful challenger.  You have scheduled a meeting with your campaign manager to talk about your prospects of losing the election. Which of the following situations would you rather be in?
 
@@ -154,6 +155,7 @@ You are in the market to buy a house and have identified two that you really lik
     
     B.	You will either lose the election or you will not, but the exact probability for each is unknown. 
 <br><br/> 
+[JPW note, this one is not in X/Y form]
 
 * 10. You work at a bank and are moving to a new city that has two branches of this bank, branch X and branch Y. Your boss is willing to transfer you to either X or Y in your new city. However, The bank's CEO has announced that within two years one of these branches will be closed because the city is only big enough to sustain one branch. The employees of the closed branch will be made redundant. Which of the following situations would you rather be in?
 
