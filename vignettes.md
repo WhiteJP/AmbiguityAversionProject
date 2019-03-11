@@ -14,6 +14,8 @@
     A.	There is a 50% chance that company X will be successful and a 50% chance that company Y will be successful. 
     
     B.	Either company X or company Y will be successful but the exact probability for each is unknown.
+
+[JPW comment: reading this one again, I am a little worried that it might not be seen as a gain now; but as a loss, just a future loss when one company originally goes out of business.]
     
 <br><br/>
 
@@ -44,7 +46,8 @@
     A.	There is a 50% chance that the person will be at a party X and a 50% chance that the person will be at party Y. 
     
     B.	The person will be at either party X or party Y but the exact probability for each is unknown.
-    
+
+[JPW note: on rereading this, Im not sure if it clearly relates to a gain.]
 <br><br/> 
 
 * 7. [was the election one, I don't think we can make this convincingly a gain in a way that the other is a loss]
@@ -55,12 +58,14 @@ You are in the market to buy a house and have identified two that you really lik
     B.	The school will be built in either X or Y but the exact probability for each is unknown. 
 <br><br/> 
 
-8. Your friend has set you up on a blind date. When you arrive at the arranged meeting place you notice that there are two people who fit the general description that your friend has given to you. You find one of these people extremely attractive, while the other one is of only average attractiveness. Before you find out which one is your date, which of the following situations would you rather be in?
+8. Your friend has set you up on a blind date. When you arrive at the arranged meeting place you notice that there are two people who fit the general description that your friend has given to you. You find one of these people, person X, extremely attractive; while the other person, person Y, is of only average attractiveness. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that the extremely attractive person is your date, and a 50% chance that the average person is your date. 
+    A.	There is a 50% chance that person X is your date, and a 50% chance that person Y is your date. 
     
-    B.	Either the attractive person or the average person is your date, but the exact probability for each is unknown. 
+    B.	Either person X or person Y is your date but the exact probability for each is unknown. 
 <br><br/>  
+
+[JPW: changed this to X Y format]
 
 9. Your child has extreme talent and interest in two things: X and Y. You have heard that in a few years a local rich person is planning on funding a very generous scholarship for talented young people in either X or Y. However, at this point they have not decided whether to support X or Y. In order for your child to be eligible they will need to receive specialised training starting now, and the skills are sufficiently time-consuming that they need to pick just one. Which of the following situations would you rather be in?
 
@@ -72,13 +77,13 @@ You are in the market to buy a house and have identified two that you really lik
 10. At a casino, there is an urn on the table which contains 1000 balls. Each of these 1000 balls is either red or yellow. You are to randomly select one of these balls from the urn and, if you selct a red ball, you will win $1000. Which of the following situations would you rather be in?
 
     A.	There is a 50% chance that the selected ball will be red, and a 50% chance the selected ball will be yellow. 
-    
     B.	The selected ball will be red or yellow, but the exact probability for each is unknown.  
 <br><br/> 
+[JPW note, this one is not in X/Y form]
 
 11. You have one day left of your vacation, and within a few hours' driving distance from your hotel are two different wildlife preserves: preserve X and preserve Y. There is a rare bird, one of the only ones of its kind, that has been spotted in both X and Y. The bird cannot be in two places at once and you do not have time to go to both. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that the rare bird is at preserve X, and a 50% chance that the rare bird ise at preserve Y. 
+    A.	There is a 50% chance that the rare bird is at preserve X, and a 50% chance that the rare bird is at preserve Y. 
     
     B.	The rare bird is at either preserve X or preserve Y, but the exact probability for each is unknown.  
 <br><br/> 
@@ -127,11 +132,11 @@ You are in the market to buy a house and have identified two that you really lik
     B.	It is either variant X or Y, but the exact probability for each is unknown. 
 <br><br/>
 
-6. Your friend has set you up on a blind date. When you arrive at the arranged meeting place you notice that there are two people who fit the general description that your friend has given to you. You find one of these people extremely unattractive, while the other one is of average attractiveness. Before you find out which one is your date, which of the following situations would you rather be in?
+6. Your friend has set you up on a blind date. When you arrive at the arranged meeting place you notice that there are two people who fit the general description that your friend has given to you. You find one of these people, person X, extremely unattractive; while the other one, person Y, is of average attractiveness. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that the unattractive person is your date, and a 50% chance that the average person is your date. 
+    A.	There is a 50% chance that person X is your date, and a 50% chance that person Y is your date. 
     
-    B.	Either the unattractive person or the average person is your date, but the exact probability for each is unknown. 
+    B.	Either person X or person Y is your date, but the exact probability for each is unknown. 
 <br><br/> 
 
 7. At a casino, there is an urn on the table which contains 1000 balls. Each of these 1000 balls is either red or yellow. You are to randomly select one of these balls from the urn and, if you selct a red ball, you will lose a $1000. Which of the following situations would you rather be in?
@@ -140,6 +145,7 @@ You are in the market to buy a house and have identified two that you really lik
 
     B.	The selected ball will be red or yellow, but the exact probability for each is unknown.  
 <br><br/> 
+[JPW note, this one is not in X/Y form]
 
 * 8. You have left your car in an uncovered airport carpark while you are travelling to a far away city for work. Since you left, you have heard news that a large hailstorm has struck near the airport but you have not been able to determine exactly where. If this hailstorm hit the airport carpark, your car has probably sustained serious and costly damage (you are uninsured). Which of the following situations would you rather be in?
 

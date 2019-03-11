@@ -16,8 +16,8 @@ var pqalist = {"G1":'It was about stocks, one of which was about to skyrocket in
               "G5": 'You were a competitive runner considering the use of new training protocols.',
               "G6": 'It was about two parties, one of which your crush was attending.',
               "G7": 'You were buying a house and an amazing school had been planned for one of the neigbourhoods you were interesed in.',
-              "G8": 'You were on a blind date and there were two people who matched your dates description.',
-              "G9": 'Your child was extremely talented in two endeavours, one of which was to receive a generous scholarshiop in the coming years.',
+              "G8": "You were on a blind date and there were two people who matched your date's description.",
+              "G9": 'Your child was extremely talented in two endeavours, one of which was to receive a generous scholarship in the coming years.',
               "G10": 'You were about to randomly select a ball from an urn, with the chance to win $1000.',
               "G11": 'It was about trying to spot a wild bird while on vacation.',
               "G12": 'You were a student with upcoming exams considering study drugs.',
@@ -25,11 +25,11 @@ var pqalist = {"G1":'It was about stocks, one of which was about to skyrocket in
               "L2": 'You were bitten by a snake, but were unsure of which species.',
               "L3": 'You had an insect infestation in your house but you were unsure which insect species.',
               "L4": 'It was about a computer virus you had gotten.',
-              "L5": 'You had acquired a pathogen, but were unsure of its consequences.',
+              "L5": 'You had acquired a pathogen, but were unsure which variant.',
               "L6": 'You were on a blind date and there were two people who matched your dates description.',
               "L7": 'You were about to randomly select a ball from an urn, with the chance to lose $1000.',
               "L8": 'You had left your car in an uncovered carpark, and a hailstorm threatened to damage it.',
-              "L9": 'You were the five-term mayor of a city about to discuss your prospects for re-electon.',
+              "L9": 'You were the five-term mayor of a city about to discuss your prospects for re-election.',
               "L10": 'You were a bank employee moving to a new city who was offered a transfer to either of two branches.',
               "L11": 'Your child was extremely talented in two endeavours, one of which was about to be discontinued at their school.',
               "L12": 'You had been offered a promotion at work with your choice of department.'
@@ -214,7 +214,7 @@ function validateDummyVignette() {
     dummyVignetteAnswer = $("input[name='dummyvignette']:checked").val();
 
     // test for empty answers
-    if (dummyVignetteAnswer > 0 && dummyVignetteAnswer < 8)  {
+    if (dummyVignetteAnswer > 0 && dummyVignetteAnswer < 8) {
       hideElements();
       showVignette();
     } else { 
