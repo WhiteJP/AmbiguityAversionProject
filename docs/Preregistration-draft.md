@@ -40,7 +40,7 @@ We will run an ordinal logistic mixed effects regression on our recoded dependen
     c. Predictor including a main effect of condition plus a random intercept of question. If this is preferred over (b) in AIC this suggests that there is substantial variation in responses as a function of the situation/vignette.
 
 
-#### Frequentist Analyses
+#### 2. Frequentist Analyses
 
 [JPW: I didn't get your thoughts on exactly what frequentist stats we will do, will we do the exact same things as for the Bayesian stats except with their corresponding frequentist version? Is it worth also doing more traditional/simple/boring frequentist analysis, like a 2-way ANOVA with Gain/Loss and vignette number as our two variables (or 3-way ANOVA if we include the order of the options too)?]
 
