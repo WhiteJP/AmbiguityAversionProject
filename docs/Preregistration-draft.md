@@ -37,7 +37,7 @@ We will run an ordinal logistic mixed effects regression (and Bayesian ordinal m
     (b) Predictor including a main effect of condition. If this is preferred over (a) in AIC this suggests that people are systematically acting differently whether it's a gain or a loss.
     (c) Predictor including a main effect of order of the option. If this is preferred over (a) in AIC this suggests that people are systematically choosing either the first or the second option presented, regardless of its content. We do not expect this to happen; this is just a precautionary check.
     (d) Predictor including a main effect of condition plus a random intercept of question. If this is preferred over (b) in AIC this suggests that there is substantial variation in responses as a function of the situation/vignette.
-    (e) Analyses (a) and (b) where the predictor is the Likert rating for only the two vignette questions involving urns. The purpose for this is to determine whether we successfully replicate the existing effect.
+    (e) Analyses (a) and (b) where the outcome is the Likert rating for only the two vignette questions involving urns. The purpose for this is to determine whether we successfully replicate the existing effect.
 
 
 ### 5. Any secondary analyses?
