@@ -9,7 +9,7 @@
     B.  Either stock X or Y will skyrocket in value but the exact probability for each is unknown.
 <br><br/>
 
-2. You are currently unemployed, but have just been offered two jobs from two different companies: company X and company Y. Both companies compete within an extremely small market so you know that only one of them will end up being successful in the long run; the other is almost certain to go out of business within a few years. Which of the following situations would you rather be in?
+2. You are currently unemployed, but have just been offered two jobs from two different companies: company X and company Y. You have heard that one of them is in line to receive a great deal of investor funding within the next year, but you don't know which one. Which of the following situations would you rather be in?
 
     A.	There is a 50% chance that company X will be successful and a 50% chance that company Y will be successful. 
     
