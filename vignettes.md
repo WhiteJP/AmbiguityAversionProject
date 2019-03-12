@@ -11,9 +11,9 @@
 
 2. You are currently unemployed, but have just been offered two jobs from two different companies: company X and company Y. You have heard that one of them is in line to receive a great deal of investor funding within the next year, but you don't know which one. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that company X will be successful and a 50% chance that company Y will be successful. 
+    A.	There is a 50% chance that company X will receive significant investor funding and a 50% chance that company Y will recieve significant investor funding. 
     
-    B.	Either company X or company Y will be successful but the exact probability for each is unknown.
+    B.	Either company X or company Y will receive significant investor funding but the exact probability for each is unknown.
 
 [JPW comment: reading this one again, I am a little worried that it might not be seen as a gain now; but as a loss, just a future loss when one company originally goes out of business.]
     
@@ -173,7 +173,7 @@ You are in the market to buy a house and have identified two that you really lik
 [removed the one about names, couldn't get it to be believable. here's one that parallels one in the gain situation]
 * 11. Your child has extreme talent and interest in two things: X and Y. You have heard that the local schools are planning on discontinuing programs in either X or Y in a few years due to lack of funds; however, at this point they have not decided which one to eliminate. You don't have the funds to get your child private lessons, so their only option is through the schools. Neither your nor your child wants to start something that they will have to stop. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that programs in X will be discontinued, and a 50% chance that programs in Y will will be discontinued.
+    A.	There is a 50% chance that programs in X will be discontinued, and a 50% chance that programs in Y will be discontinued.
     
     B.	Programs in either X or Y will be discontinued, but the exact probability for each is unknown.  
 
