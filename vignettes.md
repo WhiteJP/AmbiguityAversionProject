@@ -11,9 +11,9 @@
 
 2. You are currently unemployed, but have just been offered two jobs from two different companies: company X and company Y. You have heard that one of them is in line to receive a great deal of investor funding within the next year, but you don't know which one. Which of the following situations would you rather be in?
 
-    A.	There is a 50% chance that company X will be successful and a 50% chance that company Y will be successful. 
+    A.	There is a 50% chance that company X will receive significant investor funding and a 50% chance that company Y will recieve significant investor funding. 
     
-    B.	Either company X or company Y will be successful but the exact probability for each is unknown.
+    B.	Either company X or company Y will receive significant investor funding but the exact probability for each is unknown.
 
 [JPW comment: reading this one again, I am a little worried that it might not be seen as a gain now; but as a loss, just a future loss when one company originally goes out of business.]
     

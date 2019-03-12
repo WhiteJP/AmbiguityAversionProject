@@ -86,7 +86,7 @@ function validateDemographics() {
     for (var i = 0; i < demographics.length; i++) {
         // validate age
         if ((demographics[i].name == "age") && (/[^0-9]/.test(demographics[i].value)) || demographics[i].value < 18 || demographics[i].value > 100) {
-            alert('Please only use numbers from 18 and 100 in age.');
+            alert('Please only use numbers from 18 to 100 in age.');
             ok = false;
             break;
         }
@@ -145,7 +145,7 @@ function showInstructions() {
     $('#next').show();
     $('#next').click(showInstructions2);
 }
-// ********** SHOWINSTRUCTIONS: gives some introductory information 
+// ********** SHOWINSTRUCTIONS2: instructions continued
 function showInstructions2() {
   
     hideElements();
@@ -198,7 +198,7 @@ function validateInstructionChecks() {
     }
 }
 
-// ********** SHOWVIGNETTE: Takes participant to vignette
+// ********** SHOWDUMMYVIGNETTE: Takes participant to dummy vignette
 function showDummyVignette() {
 
     hideElements();
@@ -208,7 +208,7 @@ function showDummyVignette() {
     $('#next').click(validateDummyVignette);
 }
 
-// ********** VALIDATEDUMMYVIGNETTE: checks that they have answered the question
+// ********** VALIDATEDUMMYVIGNETTE: checks that they have answered the dummy vignette
 function validateDummyVignette() {
 
     dummyVignetteAnswer = $("input[name='dummyvignette']:checked").val();
@@ -233,7 +233,7 @@ function showVignette() {
     $('#next').click(validateVignette);
 }
 
-// ********** VALIDATEVIGNETTE: checks that they have answered the question
+// ********** VALIDATEVIGNETTE: checks that they have answered the vignette
 function validateVignette() {
   
     vignetteAnswer = $("input[name='vignette']:checked").val();
@@ -249,7 +249,7 @@ function validateVignette() {
 
 }
 
-// ********** SHOWPOSTQUESTIONS: Takes participant to vignette
+// ********** SHOWPOSTQUESTIONS: Takes participant to post-vignette questions
 function showPostQuestions() {
 
     $('#instructions').show();
