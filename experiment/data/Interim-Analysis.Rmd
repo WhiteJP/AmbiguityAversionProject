@@ -1,0 +1,161 @@
+---
+title: "Interim Analysis"
+author: "Joshua White"
+date: "1 April 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits = 2)#sets inline code, and all code to only show 2 decimal places.
+library(tidyverse)
+library(here)
+library(car) 
+library(ordinal)
+library(MASS)
+library(brms)
+library(skimr)
+
+set.seed(1298)
+```
+
+## Load Packages and set seed for reproducibility
+
+```{r load-packages, eval = FALSE}
+library(tidyverse)
+library(here)
+library(car) # for recode function
+library(ordinal) # for clmm (cumulative link mixed model) function for frequentist mixed models
+library(MASS) # for Polr fucntion(proportional odds logistic regression) when no random effects (clmm doesn't work here)
+library(brms)
+library(skimr)
+
+set.seed(1298)
+```
+
+##Import Data
+
+```{r import-data, warning = FALSE}
+d <- read_csv("parsedrawresults1.csv", col_types = "icffffnnfnfc")
+d <- d[,2:12]
+glimpse(d)
+```
+
+##Data Wrangling
+####Recode VignetteAnswer variable, create new variable, and reorder data  
+
+```{r data-wrangling}
+d$vignetteAnswer[d$answerOrder == "A"] <- recode(d$vignetteAnswer[d$answerOrder == "A"], "1 = 3;
+                                                                                          2 = 2;
+                                                                                          3 = 1;
+                                                                                          4 = 0;
+                                                                                          5 = -1;
+                                                                                          6 = -2;
+                                                                                          7 = -3")
+
+d$vignetteAnswer[d$answerOrder == "B"] <- recode(d$vignetteAnswer[d$answerOrder == "B"], "1 = -3;
+                                                                                          2 = -2;
+                                                                                          3 = -1;
+                                                                                          4 = 0;
+                                                                                          5 = 1;
+                                                                                          6 = 2;
+                                                                                          7 = 3")
+
+###create new variable for vignette type + number -- vignette###
+# order levels of factor for easy graphing
+order <- c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))) 
+d$vignette <- paste0(d$vignetteType, d$vignetteNumber) %>% factor(levels = order)
+
+#reorder data frame
+d <- d[, c(1:5, 12, 6:11)]
+```
+
+## Instruction Checks
+
+```{r instruction-checks}
+#check whether observations fail instruction checks
+instr_fail <- d$postquestion1 == "incorrect" | d$dummyVignetteAnswer <= 4
+
+#remove data from main dataset and save for possible later analysis (was a particular question more confusing etc?)
+d_removed <- d[instr_fail,]
+d_pass <- d[!instr_fail,]
+
+d_removed
+```
+
+## Quickly Inspect Final Data 
+
+```{r inspect-data}
+skim(d_pass)
+```
+
+## Graph responses
+
+```{r graph}
+#make plot
+ggplot(d_pass, aes(x = vignette, y = vignetteAnswer, fill = vignetteType)) + 
+  geom_jitter(width = 0.15, height = 0.15) +
+  stat_summary(fun.y=mean, geom="bar") +
+  ylim(c(-3.5, 3.5))
+
+```
+
+## Data analysis: Fit ordinal logistic regression models
+
+First, make vignetteAnswer an ordered factor
+```{r order-vignetteAnswer}
+d_pass$vignetteAnswer<- ordered(d_pass$vignetteAnswer, levels = c("-3", "-2", "-1", "0", "1", "2", "3"))
+
+```
+
+###Frequentist
+
+```{r frequentist-analysis}
+olm.freq.nopred <-  polr(vignetteAnswer ~ 1, data = d_pass, method = "logistic", Hess = TRUE) 
+olm.freq.GLpred <-  polr(vignetteAnswer ~ vignetteType, data = d_pass, method = "logistic", Hess = TRUE) 
+olm.freq.ordpred <- polr(vignetteAnswer ~ answerOrder, data = d_pass, method = "logistic", Hess = TRUE) 
+olmm.freq <-  clmm(vignetteAnswer ~ vignetteType + (1|vignette), data = d_pass, link = "logit", nAGQ = 10) #values between 5 and 10 generally provide accurate maximum likelihood estimates -- documentation
+
+summary(olm.freq.nopred)
+summary(olm.freq.GLpred)
+summary(olm.freq.ordpred)
+summary(olmm.freq)
+```
+
+####AIC values
+The AIC values for our four different frequentist models are:
+
+* `r AIC(olm.freq.nopred)` for the model with no predictors 
+* `r AIC(olm.freq.GLpred)` for the model with Gain or Loss as a predictor
+* `r AIC(olm.freq.ordpred)` for the model with answer order as a predictor
+* `r AIC(olmm.freq)` for the mixed model with Gain or Loss and a random effect for vignette as predictors
+
+Therefore, the most effective model is the mixed model, showing that there particpant ambiguity aversion is predicted both by whether the vignette was about a gain or a loss, and a random effect for vignette. The model taking into account answer order as a predictor had the worst Akaike Information Criterion, providing evidence that answer order did not effect participant responses. 
+
+### Bayesian
+
+```{r bayesian-analysis, warning = FALSE}
+olm.bayes.nopred <-  brm(vignetteAnswer ~ 1, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE)  #to suppress progress printing to screen for .Rmd
+olm.bayes.GLpred <-  brm(vignetteAnswer ~ vignetteType, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE) 
+olm.bayes.ordpred <- brm(vignetteAnswer ~ answerOrder, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE) 
+olmm.bayes <- brm(vignetteAnswer ~ vignetteType + (1|vignette), data = d_pass, family = cumulative(link = "logit"), 
+                  refresh = 0, open_progress = FALSE) 
+
+summary(olm.bayes.nopred)
+summary(olm.bayes.GLpred)
+summary(olm.bayes.ordpred)
+summary(olmm.bayes)
+```
+
+####WAIC values
+The WAIC values for our four different Bayesian models are (I was not able to easily extract the AIC from these models):
+
+* `r WAIC(olm.bayes.nopred)$estimates[3,1]` for the model with no predictors 
+* `r WAIC(olm.bayes.GLpred)$estimates[3,1]` for the model with Gain or Loss as a predictor
+* `r WAIC(olm.bayes.ordpred)$estimates[3,1]` for the model with answer order as a predictor
+* `r WAIC(olmm.bayes)$estimates[3,1]` for the mixed model with Gain or Loss and a random effect for vignette as predictors
+
+Therefore, the most effective model is the mixed model, showing that there particpant ambiguity aversion is predicted both by whether the vignette was about a gain or a loss, and a random effect for vignette. The model taking into account answer order as a predictor had the worst WAIC, providing evidence that answer order did not effect participant responses.
