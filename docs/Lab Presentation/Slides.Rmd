@@ -179,10 +179,10 @@ d_pass$vignetteAnswer.ordfac <- ordered(d_pass$vignetteAnswer, levels = c("-3", 
 
 ```
 
-## Freq: No Predictors  
+## Freq: No Predictors
 
 <div class="columns-2">
-```{r nopred, echo = TRUE, fig.width = 4, fig.height = 4}
+```{r nopred, echo = TRUE, fig.width = 4, fig.height = 4.5}
 olm.freq.nopred <-polr(vignetteAnswer.ordfac ~ 1, data = d_pass, 
                          method = "logistic", Hess = TRUE) 
 summary(olm.freq.nopred)
@@ -195,12 +195,13 @@ cdf <- logistic_cdf(olm.freq.nopred$zeta)
 pdf <- c(cdf[1], diff(cdf), 1 - cdf[6])
 names(pdf) <- -3:3
 
-barplot(pdf)
+barplot(pdf, xlab = "AmbAv Likert Categories",
+             ylab = "Probability")
 ```
 
 </div>
 
-## Freq: Gain or Loss Predictor
+## Freq: Gain or Loss Predictor 
 
 <div class="columns-2">
 ```{r GLpred, echo = TRUE}
@@ -221,14 +222,18 @@ newdat <- cbind(newdat, predict(olm.freq.GLpred, newdat, type = "prob"))
 ggdat <- gather(newdat, "AmbAv", "Prob", -vignetteType)
 ggdat$AmbAv <- as.numeric(ggdat$AmbAv)
 
-GLpred.graph <- ggplot(ggdat, aes(x = vignetteType, y = Prob, col = AmbAv, group = AmbAv)) + geom_line(lwd = 1) +
+GLpred.graph.bar <- ggplot(ggdat, aes(x = AmbAv, y = Prob, fill = vignetteType)) + geom_bar(stat = "identity", position = "dodge") +
+  scale_x_continuous(breaks = -3:3, labels = -3:3) +
+  theme_classic()
+
+GLpred.graph.line <- ggplot(ggdat, aes(x = vignetteType, y = Prob, col = AmbAv, group = AmbAv)) + geom_bar(lwd = 1) +
   scale_x_discrete(expand = c(.025, 0)) +
   scale_colour_distiller(palette = "RdYlBu") +
   theme_classic()
 ```
 
-```{r, fig.width=4}
-GLpred.graph
+```{r, fig.width=4, fig.height=4.5}
+GLpred.graph.bar
 ```
 
 </div>
@@ -408,5 +413,5 @@ summary(olm.bayes.GLpred.urns)
 ## WAIC values
 The WAIC values for our four different Bayesian models are (I was not able to easily extract the AIC from these models):
 
-> - No Predictor Model:       `r WAIC(olm.bayes.nopred.urns)$estimates[3,1]` 
-> - Gain/Loss Predictor Model:`r WAIC(olm.bayes.GLpred.urns)$estimates[3,1]`
+> - No Predictor Model:        `r WAIC(olm.bayes.nopred.urns)$estimates[3,1]` 
+> - Gain/Loss Predictor Model: `r WAIC(olm.bayes.GLpred.urns)$estimates[3,1]`
