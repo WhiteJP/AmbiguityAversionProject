@@ -70,19 +70,23 @@ d$vignette <- paste0(d$vignetteType, d$vignetteNumber) %>% factor(levels = order
 d <- d[, c(1:5, 12, 6:11)]
 ```
 
-## Instruction Checks
+## Instruction Checks 
 
 ```{r instruction-checks}
+# first remove amy's testing data point
+amy.testing <- grep("amy", d$postquestion2)
+d_amyremoved <- d[-amy.testing,]
+
 #check whether observations fail instruction checks
-instr_fail <- d$postquestion1 == "incorrect" | d$dummyVignetteAnswer <= 4
+instr_fail <- d_amyremoved$postquestion1 == "incorrect" | d_amyremoved$dummyVignetteAnswer <= 4
 
 #remove data from main dataset and save for possible later analysis (was a particular question more confusing etc?)
-d_removed <- d[instr_fail,]
-d_pass <- d[!instr_fail,]
+d_removed <- d_amyremoved[instr_fail,]
+d_pass <- d_amyremoved[!instr_fail,]
 
 d_removed
 ```
-
+  
 ## Quickly Inspect Final Data 
 
 ```{r inspect-data}
