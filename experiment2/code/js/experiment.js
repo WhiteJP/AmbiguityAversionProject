@@ -55,7 +55,7 @@ $(document).ready(function () {
     starty = 0;
     dummystartx = 0;
     dummystarty = 0;
-    vignetteNumber = Math.floor((Math.random() * 12) + 1);
+    vignetteNumber = Math.floor((Math.random() * 2) + 1);
         if (a===0) {
             gainorloss = 'G';
         } else {
@@ -161,15 +161,6 @@ function showInstructions() {
     $('#instructions').show();
     $('#instructions').load('html/instructions.html');
     $('#next').show();
-    $('#next').click(showInstructions2);
-}
-// ********** SHOWINSTRUCTIONS2: instructions continued
-function showInstructions2() {
-  
-    hideElements();
-    $('#instructions').show();
-    $('#instructions').load('html/instructions2.html');
-    $('#next').show();
     $('#next').click(showInstructionChecks);
 }
 
@@ -258,23 +249,29 @@ function showDummyVignette() {
 function validateDummyVignette() {
 
     dummyconf = $("input[name='dummyconf']:checked").val();
-    dummyxprob = $('#dumsliderx').slider("option", "value");
-    dummyyprob = $('#dumslidery').slider("option", "value");
+    dummyxprob = $('#sliderx').slider("option", "value");
+    dummyyprob = $('#slidery').slider("option", "value");
     
-    // test for empty answers
-    if (dummyconf >= 0 && dummyconf <= 4 && dumchanged === true) {
-      hideElements();
-      showVignette();
+    // test for unchanged slider
+    if (dumchanged === false) {
+      alert('Please answer the first two questions. You must move the sliders at least once to continue');
+      showVignette;
     } else { 
-      alert('Please answer the questions. You must move the sliders at least once to continue');
-      showDummyVignette; 
+      // test for unanswered conf question
+      if (dummyconf >= 0 && dummyconf <= 4) {
+        hideElements();
+        showVignette();
+      } else {
+        alert('Please answer the third question.');
+        showDummyVignette;
+      }
     }
 }
 
 // ********** SHOWVIGNETTE: Takes participant to vignette
 function showVignette() {
     
-    var vignettehtml = 'html/vignettes/vignetteG1.html';
+    var vignettehtml = 'html/vignettes/vignette' + gainorloss + vignetteNumber + '.html';
     vignchanged = false;
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
