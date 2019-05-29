@@ -53,8 +53,6 @@ $(document).ready(function () {
     var c = Math.floor(Math.random() * 2);
     startx = 0;
     starty = 0;
-    dummystartx = 0;
-    dummystarty = 0;
     vignetteNumber = Math.floor((Math.random() * 2) + 1);
         if (a===0) {
             gainorloss = 'G';
@@ -70,14 +68,6 @@ $(document).ready(function () {
             starty = 100;
         } 
         
-        if (c===0) {
-            dummystart100 = 'x';
-            dummystartx = 100;
-        } else {
-            dummystart100 = 'y';
-            dummystarty = 100;
-        } 
-     
     condition = gainorloss + vignetteNumber + start100;
     correctpostquestionanswer = pqalist[gainorloss + vignetteNumber];
     showDemographics();
@@ -175,19 +165,20 @@ function showInstructionChecks() {
 }
 
 
-// ********** VALIDATEINSTRUCTIONCHECKS: makes sure they understood the instructions -- need to change this so as to validate answer. 
+// ********** VALIDATEINSTRUCTIONCHECKS: makes sure they understood the instructions 
 function validateInstructionChecks() {
   
     instructionChecks = $('#instr').serializeArray();
 
     var ok = true;
-    if (instructionChecks.length < 3) {
-      alert('Please fill out all questions.');
-      showInstructionChecks();
-      ok = false;
+    var allanswers = true;
+    if (instructionChecks.length < 2) {
+      alert('Please complete all questions.');
+      allanswers = false;
+ 
       
     } else {
-      
+      allanswers = true;
       for (var i = 0; i < instructionChecks.length; i++) {
         // check for incorrect responses
         if(instructionChecks[i].value === "incorrect") {
@@ -197,9 +188,12 @@ function validateInstructionChecks() {
         }
       }
     }
-
+    
+    
     // goes to next section
-    if (!ok) {
+    if (!allanswers) {
+        showInstructionCheck;
+    } else if(!ok) {
         showInstructions(); 
     } else {
         hideElements();
@@ -213,31 +207,19 @@ function showDummyVignette() {
     dumchanged = false;
     $('#instructions').show();
     $('#instructions').load('html/dummyvignette.html', function() {
-        $("#inputx").prop('readonly', true).val(dummystartx);
-        $("#inputy").prop('readonly', true).val(dummystarty);
-        $( "#sliderx" ).slider({
+        $("#inputx").prop('readonly', true).val(startx);
+        $("#inputy").prop('readonly', true).val(starty);
+        $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: dummystartx,
+          value: startx,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
-             $("#slidery").slider("value", (100 - ui.value));
              $("#inputy").val(100 - ui.value);
           }
           });
-        $( "#slidery" ).slider({
-          min: 0,
-          max: 100,
-          value: dummystarty,
-          step: 1,
-          slide: function(event, ui) {
-             $("#inputy").val(ui.value);
-             $("#sliderx").slider("value", (100 - ui.value));
-             $("#inputx").val(100 - ui.value);
-          }
-        });
-        $( "#sliderx" ).on("slidechange", function( event, ui ) {
+        $( "#slider" ).on("slidechange", function( event, ui ) {
           dumchanged = true;
         });
       });
@@ -249,12 +231,12 @@ function showDummyVignette() {
 function validateDummyVignette() {
 
     dummyconf = $("input[name='dummyconf']:checked").val();
-    dummyxprob = $('#sliderx').slider("option", "value");
-    dummyyprob = $('#slidery').slider("option", "value");
+    dummyxprob = $("#inputx").val();
+    dummyyprob = $("#inputy").val();
     
     // test for unchanged slider
     if (dumchanged === false) {
-      alert('Please answer the first two questions. You must move the sliders at least once to continue');
+      alert('Please answer the first question. You must move the slider at least once to continue.');
       showVignette;
     } else { 
       // test for unanswered conf question
@@ -262,7 +244,7 @@ function validateDummyVignette() {
         hideElements();
         showVignette();
       } else {
-        alert('Please answer the third question.');
+        alert('Please answer the second question.');
         showDummyVignette;
       }
     }
@@ -277,29 +259,17 @@ function showVignette() {
     $('#instructions').load(vignettehtml, function() {
         $("#inputx").prop('readonly', true).val(startx);
         $("#inputy").prop('readonly', true).val(starty);
-        $( "#sliderx" ).slider({
+        $( "#slider" ).slider({
           min: 0,
           max: 100,
           value: startx,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
-             $("#slidery").slider("value", (100 - ui.value));
              $("#inputy").val(100 - ui.value);
           }
           });
-        $( "#slidery" ).slider({
-          min: 0,
-          max: 100,
-          value: starty,
-          step: 1,
-          slide: function(event, ui) {
-             $("#inputy").val(ui.value);
-             $("#sliderx").slider("value", (100 - ui.value));
-             $("#inputx").val(100 - ui.value);
-          }
-        });
-        $( "#sliderx" ).on("slidechange", function( event, ui ) {
+        $( "#slider" ).on("slidechange", function(event, ui) {
           vignchanged = true;
         }); 
       });
@@ -311,12 +281,12 @@ function showVignette() {
 function validateVignette() {
   
     vignetteconf = $("input[name='vignetteconf']:checked").val();
-    vignettexprob = $('#sliderx').slider("option", "value");
-    vignetteyprob = $('#slidery').slider("option", "value");
+    vignettexprob = $("#inputx").val();
+    vignetteyprob = $("#inputy").val();
     
     // test for unchanged slider
     if (vignchanged === false) {
-      alert('Please answer the first two questions. You must move the sliders at least once to continue');
+      alert('Please answer the first question. You must move the slider at least once to continue.');
       showVignette;
     } else { 
       // test for unanswered conf question
@@ -324,7 +294,7 @@ function validateVignette() {
         hideElements();
         showPostQuestions();
       } else {
-        alert('Please answer the third question.');
+        alert('Please answer the second question.');
         showVignette;
       }
     }
@@ -368,8 +338,7 @@ function saveParticipantData() {
     exp_data["condition"] = condition;
     exp_data["vignetteType"] = gainorloss;
     exp_data["vignetteNumber"]= vignetteNumber;
-    exp_data["dummyStart100"] = dummystart100;
-    exp_data["vignetteStart100"] = start100;
+    exp_data["Start100"] = start100;
     exp_data["dummyConfidence"] = dummyconf;
     exp_data["dummyXprob"] = dummyxprob;
     exp_data["dummyYprob"] = dummyyprob;
