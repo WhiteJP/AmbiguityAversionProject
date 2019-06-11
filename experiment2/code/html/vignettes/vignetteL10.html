@@ -6,19 +6,21 @@
 
 You work at a bank and are moving to a new city that has two branches of this bank, branch X and branch Y. Your boss is willing to transfer you to either X or Y in your new city. However, The bank's CEO has announced that within two years one of these branches will be closed because the city is only big enough to sustain one branch. The employees of the closed branch will be made redundant.<br><br>
 
-Which of the following situations would you rather be in? <br>
-A. There is a 50% chance that branch X will be closed, and a 50% chance that branch Y will be closed.<br>
-B. Either branch X or Y will be closed, but the exact probability for each is unknown. <br><br>
+<b>Question:</b> If you had to guess, what is the probability that each branch will close down? <br><br>
+
+<b>Answer:</b> I would guess that the probability that one branch will close is <input type="text" id = "inputx"/>% and the probability the the other branch will close is <input type="text" id = "inputy"/>%. 
+<div class = "slider" id = "slider"> </div> <br>
+
+How confident are you in your answer to the previous question? 
 
 <center>
-<label for='vignette'></label>
-<input type="radio" name="vignette" value="1" />Definitely A   
-<input type="radio" name="vignette" value="2" />Probably A     
-<input type="radio" name="vignette" value="3" />Slightly A     
-<input type="radio" name="vignette" value="4" />No preference     
-<input type="radio" name="vignette" value="5" />Slightly B   
-<input type="radio" name="vignette" value="6" />Probably B    
-<input type="radio" name="vignette" value="7" />Definitely B
+<label for='vignetteconf'></label>
+<input type="radio" name="vignetteconf" value="1" />Not at all confident   
+<input type="radio" name="vignetteconf" value="2" />Slightly confident
+<input type="radio" name="vignetteconf" value="3" />Somewhat confident     
+<input type="radio" name="vignetteconf" value="4" />Reasonably confident 
+<input type="radio" name="vignetteconf" value="5" />Extremely confident  
 </center>
-<br><br>
+<br>
 </form>
+

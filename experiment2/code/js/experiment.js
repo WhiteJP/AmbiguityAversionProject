@@ -53,7 +53,7 @@ $(document).ready(function () {
     var c = Math.floor(Math.random() * 2);
     startx = 0;
     starty = 0;
-    vignetteNumber = Math.floor((Math.random() * 2) + 1);
+    vignetteNumber = Math.floor((Math.random() * 12) + 1);
         if (a===0) {
             gainorloss = 'G';
         } else {

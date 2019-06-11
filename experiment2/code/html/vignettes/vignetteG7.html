@@ -4,22 +4,23 @@
 
 <form id="vignetteG1A">
 
-You are in the market to buy a house and have identified two that you really like, X and Y. Your real estate agent tells you that the local government is planning on building an amazing school in the neighbourhood of either X or Y, which would greatly increase its property values (and is also very appealing to you since you are planning a family). Unfortunately no decision has been made at this point about where it will be built, and you need to put an offer in now in order to get either house. Which of the following situations would you rather be in? <br><br>
+You are in the market to buy a house and have identified two that you really like, X and Y. Your real estate agent tells you that the local government is planning on building an amazing school in the neighbourhood of either X or Y, which would greatly increase its property values (and is also very appealing to you since you are planning a family). Unfortunately no decision has been made at this point about where it will be built, and you need to put an offer in now in order to get either house.  <br><br>
 
-Which of the following situations would you prefer to be in? <br>
-A.	There is a 50% chance that the school will be built in neighbourhood X, and a 50% chance that it will be built in neighbourhood Y. <br>
-B.	The school will be built in either neighbourhood X or neighbourhood Y but the exact probability for each is unknown.  <br><br>
+<b>Question:</b> If you had to guess, what is the probability that the school will be built in each neighbourhood? <br><br>
+
+<b>Answer:</b> I would guess that the probability that the school will be built in one neighbourhood is <input type="text" id = "inputx"/>% and the probability it will be built in the other neighbourhood is <input type="text" id = "inputy"/>%. 
+<div class = "slider" id = "slider"> </div> <br>
+
+How confident are you in your answer to the previous question? 
 
 <center>
-<label for='vignette'></label>
-<input type="radio" name="vignette" value="1" />Definitely A   
-<input type="radio" name="vignette" value="2" />Probably A     
-<input type="radio" name="vignette" value="3" />Slightly A     
-<input type="radio" name="vignette" value="4" />No preference     
-<input type="radio" name="vignette" value="5" />Slightly B   
-<input type="radio" name="vignette" value="6" />Probably B    
-<input type="radio" name="vignette" value="7" />Definitely B
+<label for='vignetteconf'></label>
+<input type="radio" name="vignetteconf" value="1" />Not at all confident   
+<input type="radio" name="vignetteconf" value="2" />Slightly confident
+<input type="radio" name="vignetteconf" value="3" />Somewhat confident     
+<input type="radio" name="vignetteconf" value="4" />Reasonably confident 
+<input type="radio" name="vignetteconf" value="5" />Extremely confident  
 </center>
-<br><br>
-
+<br>
 </form>
+

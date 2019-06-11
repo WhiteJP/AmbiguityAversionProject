@@ -12,7 +12,7 @@ The aim of the present experiment includes the 2 aims mentioned for experiment 1
     
 3.  Can the degree of ambiguity aversion shown in relation to life-like vignettes which involve qualitative gains and losses be predicted by the prior probabilities participants assign to the vignette outcomes under ambiguity. 
 
-Hypothesis: There will be less ambiguity aversion (and possibly even ambiguity seeking) for vignettes in which participants assign greater prior probability under ambiguity to the more positive outcome (whether this be a neutral outcome in comparison to a loss, or a gain in comparison to a neutral outcome) than to the more negative outcome. 
+Hypothesis: There will be less ambiguity aversion (and possibly even ambiguity seeking) for vignettes in which participants assign greater prior probability under ambiguity to the more positive outcome than to the more negative outcome. 
 
 ### 3. Describe the key dependent variable(s) specifying how they will be measured.
 
@@ -20,11 +20,11 @@ The key dependent variable, ambiguity aversion, has already been measured in our
 
 In this experiment we will be collecting people's estimates of the prior probabilities they assign to each of two outcomes in each of these vignettes. To collect this information, participants will be shown the exact same vignettes as in experiment 1. In each of these vignettes, there are two outcomes. Participants will be advised that one (but not both) of these outcomes must occur but the exact probabilities are unknown. Participants will then be asked to guess what the probabilities of these outcomes are. Participants will assign a whole percentage value (from 0% to 100%) to each of these outcomes. Participants responses will be forced to add to 100% in real time. 
 
-This information will be recoded as just one variable: odds ratio of favourable outcome compared to unfavourable outcome. This variable will simply be computed as:
+This information will be recoded as just one variable: odds of favourable outcome compared to unfavourable outcome. This variable will simply be computed as:
 
-<center> ORfav = P(favourable outcome) / P(unfavourable outcome) </center>
+<center> Oddsfav = P(favourable outcome) / P(unfavourable outcome) </center>
 
-For each vignette, the mean of all participant's odds ratios will be used as an Independent variable in this study (meanORfav). 
+For each vignette, the mean of all participant's Oddsfav will be used as the dependent variable in this study (meanOddsfav). 
 
 ### 4. How many and which conditions will participants be assigned to?
 
@@ -33,37 +33,35 @@ which are 'gain' scenarios and half of which are 'loss' scenarios (vignetteType)
 
 ### 5. Specify exactly which analyses you will conduct to examine the main question/hypothesis.
 
-We will conduct the following Frequentist statistical analyses:
-
-We will run the following OLS Multiple linear regressions at the group level (i.e. each data point corresponds to each of the 24 vignettes):
+We will conduct the following Frequentist OLS Multiple Linear Regressions at the group level (i.e. each data point corresponds to each of the 24 vignettes):
 
 1. meanAA ~ 1
 2. meanAA ~ vignetteType 
-3. meanAA ~ meanORfav + vignetteType 
-4. meanAA ~ meanORfav + vignetteType + meanOR*vignetteType
+3. meanAA ~ meanOddsfav + vignetteType 
+4. meanAA ~ meanOddsfav + vignetteType + meanOddsfav*vignetteType
 
-AIC comparisons will be made to see whether each added parameter improves the model. 
-
-We will also conduct Bayesian analogues to the above analysis. 
-
-
-[IDEA -- could maybe run a Spearman's correlation analysis between meanAA and meanAAfav --- this could help the possible problem that we are taking the mean of an ordinal variable and using that as our main DV with ordinary regression. ??? ]
+We will also conduct Bayesian analogues to the above analysis, with AIC comparisons to see whether each added parameter improves the model. 
 
 ### 6. Any secondary analyses?
 
-In addition to the main variables being collected (discussed above) we are also collecting a confidence variable. Here, participants will answer on a Likert scale from 1 = "Not at all confident" to 5 = "Extremely confident" how confident they are in their assigned probabilities. Further post-hoc analyses involving this variable may be undertaken. This variable may be used as a broad proxy for the uncertainty surrounding their prior-probability point estimates, to allow for estimation of their whole prior distributions rather than mere point-estimates. 
+In addition to the main variables being collected (discussed above) we are also collecting a confidence variable. Here, participants will answer on a Likert scale from 1 = "Not at all confident" to 5 = "Extremely confident" how confident they are in their assigned probabilities. This variable may be used as a broad proxy for the uncertainty surrounding participant prior-probability point estimates. We will perform similar analyses as above using the mean of this variable (meanCR), as shown below:
+
+1. meanAA ~ 1
+2. meanAA ~ vignetteType 
+3. meanAA ~ meanCR + vignetteType 
+4. meanAA ~ meanCR + vignetteType + meanCR*vignetteType
+
+We will also conduct Bayesian analogues to the above analysis, with AIC comparisons to see whether each added parameter improves the model. 
 
 We may also undertake further post-hoc analysis in relation to our data, but will clearly indicate that these are post hoc and exploratory.
 
-
 ### 7. How many observations will be collected or what will determine sample size?
 
-We will run the experiment on 1200 people on Amazon Mechanical Turk who
+We will run the experiment on 720 people on Amazon Mechanical Turk who
 have been pre-screened for English language ability via the Adelaide
-Basic Qualification. A sample size of 1200 should average about 50
+Basic Qualification. A sample size of 720 should average about 30
 responses per vignette, although since allocation is random exact
-numbers are not
-guaranteed.
+numbers are not guaranteed.
 
 ### 8. Anything else you would like to pre-register? (e.g., secondary analyses, variables collected for exploratory purposes, unusual analyses planned?)
 
