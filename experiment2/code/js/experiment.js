@@ -50,7 +50,6 @@ $(document).ready(function () {
     subjectID = s1.concat(s2);
     var a = Math.floor(Math.random() * 2);
     var b = Math.floor(Math.random() * 2);
-    var c = Math.floor(Math.random() * 2);
     startx = 0;
     starty = 0;
     vignetteNumber = Math.floor((Math.random() * 12) + 1);
