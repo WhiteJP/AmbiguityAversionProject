@@ -2,3 +2,6 @@
 1.	Possibly do a follow-up study with similar (the same where possible) vignettes, to see how much people will pay for each option or asking the how likely they are to act on a likert scale. The point here is to avoid participants being able to compare between the two conditions (each particpant would only be shown an ambiguous or risky possibily and asked to say how much they would pay for it, or how likely they are to act). 
 > would keeping the vignettes qualitative, and still not trying to track any objective utility, the point is to provide a way to compare whether there is ambiguity, without letting the participants compare it. 
 > this way we can seek to see how these results exist even when non-comparable contexts – as it has been shown that the comparable nature of ambiguity aversion is one of the factors which helps drive it (although it doesn’t account for it completely). 
+
+
+Could do some sort of text mining or qualitative analysis of the participants responses to postquestion2. 

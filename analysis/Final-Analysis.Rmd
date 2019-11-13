@@ -35,10 +35,32 @@ set.seed(1298)
 
 ##Import Data
 
-```{r import-data, warning = FALSE}
-d <- read_csv("parsedrawresults.csv", col_types = "icffffnnfnfc")
-d <- d[,2:12]
-glimpse(d)
+```{r import-data, warning = FALSE, include = FALSE}
+data <- read_csv("parsedrawresultsexp2.csv", col_types = "icffffiiiiiififc")
+data <- data[,2:ncol(data)]
+data
+
+
+
+```
+
+```{r simulate-data}
+
+data <- tibble(
+          vignetteType = sample(x = c("G", "L"), size = 720, replace = TRUE), 
+          vignetteNumber = ceiling(12 * runif(720)),
+          start100 = sample(x = c("x", "y"), size = 720, replace = TRUE),
+          dummyConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+          dummyXprob = rpois(720, 50),
+          dummyYprob = 100 - dummyXprob,
+          vignetteConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+          vignetteXprob = rpois(720, 50),
+          vignetteYprob = 100 - vignetteXprob,
+          gender = sample(x = c("male", "female", "other", "prefer not to say", NA), size = 720, 
+                          replace = TRUE, prob = c(.46, .49, .02, .02, .01)),
+          age = rpois(720, 35),
+          postQuestion1 = sample(x = c("correct", "incorrect"), size = 720, replace = TRUE, prob = c(.93, .07)))
+
 ```
 
 ##Data Wrangling
@@ -91,6 +113,10 @@ d_removed
 
 ```{r inspect-data}
 skim(d_pass)
+
+# save d_pass as RDA for possible later use
+exp1d <- d_pass
+save(exp1d, file="exp1d.Rda")
 ```
 
 ## Graph responses

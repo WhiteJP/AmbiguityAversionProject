@@ -1,0 +1,16 @@
+
+
+tibble(
+  vignetteType = sample(x = c("G", "L"), size = 720, replace = TRUE), 
+  vignetteNumber = ceiling(12 * runif(720)),
+  start100 = sample(x = c("x", "y"), size = 720, replace = TRUE),
+  dummyConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+  dummyXprob = rpois(720, 50),
+  dummyYprob = 100 - dummyXprob,
+  vignetteConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+  vignetteXprob = rpois(720, 50),
+  vignetteYprob = 100 - vignetteXprob,
+  gender = sample(x = c("male", "female", "other", "prefer not to say", NA), size = 720, 
+                  replace = TRUE, prob = c(.46, .49, .02, .02, .01)),
+  age = rpois(720, 35),
+  postQuestion1 = sample(x = c("correct", "incorrect"), size = 720, replace = TRUE, prob = c(.93, .07)))

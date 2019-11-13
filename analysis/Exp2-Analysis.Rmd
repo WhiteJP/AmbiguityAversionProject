@@ -1,0 +1,171 @@
+---
+title: "Exp2-Analysis"
+author: "Josh White"
+date: "30/08/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(car) 
+library(brms)
+library(skimr)
+library(qpcR) #for aikake.weights()
+library(fitdistrplus) # for statistical plots and tests for fitting distributions
+```
+
+## Load Packages and set seed for reproducibility
+
+```{r load-packages, eval = FALSE}
+library(tidyverse)
+library(here)
+library(car) 
+library(brms)
+library(skimr)
+library(qpcR) #for aikake.weights()
+library(fitdistrplus) # for statistical plots and tests for fitting distributions
+
+set.seed(1298)
+```
+
+##Import Data
+
+```{r import-data, warning = FALSE}
+data <- read_csv("parsedrawresultsexp2.csv", col_types = "icffffiiiiiififc")
+data <- data[,2:ncol(data)]
+data
+
+#load previous data
+load("exp1d.Rda")
+
+# get means
+meanAAdata <- exp1d %>% group_by(vignetteType, vignetteNumber) %>% summarise(meanAA = mean(vignetteAnswer))
+
+```
+
+```{r simulate-data}
+
+data <- tibble(
+          vignetteType = factor(sample(x = c("G", "L"), size = 720, replace = TRUE)), 
+          vignetteNumber = factor(ceiling(12 * runif(720))),
+          start100 = sample(x = c("x", "y"), size = 720, replace = TRUE),
+          dummyConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+          dummyXprob = rpois(720, 75),
+          dummyYprob = 100 - dummyXprob,
+          vignetteConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
+          vignetteXprob = rpois(720, 50),
+          vignetteYprob = 100 - vignetteXprob,
+          gender = factor(sample(x = c("male", "female", "other", "prefer not to say", NA), size = 720, 
+                          replace = TRUE, prob = c(.46, .49, .02, .02, .01))),
+          age = rpois(720, 35),
+          postQuestion1 = sample(x = c("correct", "incorrect"), size = 720, replace = TRUE, prob = c(.93, .07)))
+
+```
+
+## data wrangle
+
+```{r wrangle}
+## mutate to get Oddsfav for each participant
+data <- data %>% mutate(oddsFav = vignetteXprob/vignetteYprob)
+
+# Y is favourable outcome in Loss vignettes, so take inverse
+data$oddsFav[data$vignetteType == "L"] <- 1/data$oddsFav[data$vignetteType == "L"] 
+
+# create vignette column
+order <- c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))) 
+data$vignette <- paste0(data$vignetteType, data$vignetteNumber) %>% factor(levels = order)
+
+```
+
+## exclude participants
+
+```{r exclude}
+#check whether observations fail instruction checks
+instr_fail <- data$postQuestion1 == "incorrect" | data$dummyXprob <= 50
+
+#remove data from main dataset and save for possible later analysis (was a particular question more confusing etc?)
+d_removed <- data[instr_fail,]
+d_pass <- data[!instr_fail,]
+
+d_removed
+
+```
+
+##plot and descpriptive stats
+
+```{r plot}
+ggplot(d_pass, aes(x = vignette, y = oddsFav, fill = vignetteType)) + 
+  geom_jitter(width = 0.20, height = 0.10) +
+  stat_summary(fun.y=mean, geom="bar", alpha = 0.8)
+
+##redo to change origin of bars
+ggplot(d_pass, aes(x = vignette, y = oddsFav - 1, fill = vignetteType)) + 
+  geom_jitter(width = 0.20, height = 0.10) +
+  stat_summary(fun.y=mean, geom="bar", alpha = 0.8) +
+   scale_y_continuous(breaks=seq(-1, 1, .5), labels=seq(0,2,.5)) + ylab("Odds of favourable outcome") 
+
+skim(d_pass)
+
+```
+
+
+## datawrangle to final dataset
+```{r datawrangle}
+
+## summarise data to get mean Odds and meanCR
+d <- d_pass %>% group_by(vignetteType, vignetteNumber, vignette) %>% summarise(meanOddsFav = mean(oddsFav),
+                                                                                meanCR = mean(vignetteConfidence))
+d <- left_join(d, meanAAdata, by = c("vignetteType", "vignetteNumber"))
+
+#reorder
+d <- d[c(1, 3:6)]
+d
+
+```
+
+## Analysis ##
+
+###freq
+```{r mods}
+mods <- list()
+
+#models for odds
+mods[[1]] <- lm(meanAA ~ 1, data = d)
+mods[[2]] <- lm(meanAA ~ vignetteType + 1, data = d)
+mods[[3]] <- lm(meanAA ~ meanOddsFav + vignetteType + 1, data = d)
+mods[[4]] <- lm(meanAA ~ meanOddsFav*vignetteType + 1, data = d)
+
+#models for odds
+mods[[5]] <- lm(meanAA ~ meanCR + 1, data = d)
+mods[[6]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d)
+mods[[7]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d)
+
+
+AICs <- map_dbl(mods, AIC)
+BICs <- map_dbl(mods, BIC)
+AICw <- akaike.weights(AICs)
+BICw <- akaike.weights(BICs)
+
+#plots 
+map(mods, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+```
+
+##bayes
+``` {r bayes-mod}
+bayesmods <- list()
+
+bayesmods[[1]] <- brm(meanAA ~ 1, data = d)
+bayesmods[[2]] <- brm(meanAA ~ vignetteType + 1, data = d)
+bayesmods[[3]] <- brm(meanAA ~ meanOddsFav + vignetteType + 1, data = d)
+bayesmods[[4]] <- brm(meanAA ~ meanOddsFav*vignetteType + 1, data = d)
+
+#models for odds
+bayesmods[[5]] <- brm(meanAA ~ meanCR + 1, data = d)
+bayesmods[[6]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d)
+bayesmods[[7]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d)
+
+```
