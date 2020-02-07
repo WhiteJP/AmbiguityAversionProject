@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, cache = TRUE, message = FALSE)
 
 library(tidyverse)
 library(here)
@@ -15,7 +15,10 @@ library(brms)
 library(skimr)
 library(qpcR) #for aikake.weights()
 library(fitdistrplus) # for statistical plots and tests for fitting distributions
+library(lm.beta)
 ```
+
+# Introductory Steps
 
 ## Load Packages and set seed for reproducibility
 
@@ -27,45 +30,29 @@ library(brms)
 library(skimr)
 library(qpcR) #for aikake.weights()
 library(fitdistrplus) # for statistical plots and tests for fitting distributions
+library(lm.beta)
 
 set.seed(1298)
 ```
 
-##Import Data
+## Import Data
 
 ```{r import-data, warning = FALSE}
 data <- read_csv("parsedrawresultsexp2.csv", col_types = "icffffiiiiiififc")
 data <- data[,2:ncol(data)]
+data <- data %>% filter(age != 99) #remove amy test from dataset
 data
 
 #load previous data
 load("exp1d.Rda")
 
-# get means
+# get means for each vignette
 meanAAdata <- exp1d %>% group_by(vignetteType, vignetteNumber) %>% summarise(meanAA = mean(vignetteAnswer))
+meanAAdata
 
 ```
 
-```{r simulate-data}
-
-data <- tibble(
-          vignetteType = factor(sample(x = c("G", "L"), size = 720, replace = TRUE)), 
-          vignetteNumber = factor(ceiling(12 * runif(720))),
-          start100 = sample(x = c("x", "y"), size = 720, replace = TRUE),
-          dummyConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
-          dummyXprob = rpois(720, 75),
-          dummyYprob = 100 - dummyXprob,
-          vignetteConfidence = sample(x = 1:5, size = 720, replace = TRUE, prob = c(.1, .25, .3, .25, .1)),
-          vignetteXprob = rpois(720, 50),
-          vignetteYprob = 100 - vignetteXprob,
-          gender = factor(sample(x = c("male", "female", "other", "prefer not to say", NA), size = 720, 
-                          replace = TRUE, prob = c(.46, .49, .02, .02, .01))),
-          age = rpois(720, 35),
-          postQuestion1 = sample(x = c("correct", "incorrect"), size = 720, replace = TRUE, prob = c(.93, .07)))
-
-```
-
-## data wrangle
+## Data Wrangling
 
 ```{r wrangle}
 ## mutate to get Oddsfav for each participant
@@ -74,13 +61,17 @@ data <- data %>% mutate(oddsFav = vignetteXprob/vignetteYprob)
 # Y is favourable outcome in Loss vignettes, so take inverse
 data$oddsFav[data$vignetteType == "L"] <- 1/data$oddsFav[data$vignetteType == "L"] 
 
+## mutate to get differences between options 
+data <- data %>% mutate(fav_minus_unfav = vignetteXprob - vignetteYprob)
+data$fav_minus_unfav[data$vignetteType == "L"] <- -(data$fav_minus_unfav[data$vignetteType == "L"]) # opposite sign for losses cause Y is favourable
+
 # create vignette column
 order <- c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))) 
 data$vignette <- paste0(data$vignetteType, data$vignetteNumber) %>% factor(levels = order)
 
 ```
 
-## exclude participants
+### exclude participants
 
 ```{r exclude}
 #check whether observations fail instruction checks
@@ -91,81 +82,343 @@ d_removed <- data[instr_fail,]
 d_pass <- data[!instr_fail,]
 
 d_removed
+d_pass
 
 ```
 
-##plot and descpriptive stats
+### Get final dataset for regression models.
 
-```{r plot}
-ggplot(d_pass, aes(x = vignette, y = oddsFav, fill = vignetteType)) + 
-  geom_jitter(width = 0.20, height = 0.10) +
+```{r datawrangle}
+
+## summarise data to get mean Odds and meanCR
+d <- d_pass %>% group_by(vignetteType, vignetteNumber, vignette) %>% summarise(meanOddsFav = mean(oddsFav),
+                                                                               meanpercdiff = mean(fav_minus_unfav),
+                                                                                meanCR = mean(vignetteConfidence))
+d <- left_join(d, meanAAdata, by = c("vignetteType", "vignetteNumber"))
+
+#reorder
+d <- d[c(1, 3:7)]
+d
+
+```
+
+# ANALYSIS USING PERCENTAGE DIFFERENCE
+
+## plot and descriptives
+```{r plot-diff}
+ggplot(d_pass, aes(x = vignette, y = fav_minus_unfav, fill = vignetteType)) + 
+  geom_jitter(width = 0.20, height = 0) +
   stat_summary(fun.y=mean, geom="bar", alpha = 0.8)
-
-##redo to change origin of bars
-ggplot(d_pass, aes(x = vignette, y = oddsFav - 1, fill = vignetteType)) + 
-  geom_jitter(width = 0.20, height = 0.10) +
-  stat_summary(fun.y=mean, geom="bar", alpha = 0.8) +
-   scale_y_continuous(breaks=seq(-1, 1, .5), labels=seq(0,2,.5)) + ylab("Odds of favourable outcome") 
 
 skim(d_pass)
 
 ```
 
+## Models
 
-## datawrangle to final dataset
-```{r datawrangle}
+### Frequentist
 
-## summarise data to get mean Odds and meanCR
-d <- d_pass %>% group_by(vignetteType, vignetteNumber, vignette) %>% summarise(meanOddsFav = mean(oddsFav),
+```{r mods-freq-diff}
+mods.diff <- list()
+
+#models for AA with mean percent difference
+mods.diff[[1]] <- lm(meanAA ~ 1, data = d)
+mods.diff[[2]] <- lm(meanAA ~ vignetteType + 1, data = d)
+mods.diff[[3]] <- lm(meanAA ~ meanpercdiff + vignetteType + 1, data = d)
+mods.diff[[4]] <- lm(meanAA ~ meanpercdiff*vignetteType + 1, data = d)
+
+## compare model fit with AIC/BIC and AIC/BIC weights. 
+AICs.diff <- map_dbl(mods.diff, AIC)
+BICs.diff <- map_dbl(mods.diff, BIC)
+AICw.diff <- akaike.weights(AICs.diff)
+BICw.diff <- akaike.weights(BICs.diff)
+
+# Both BIC and AIC point to model 3 as best fitting (percdiff and vignette type with no interaction)
+AICs.diff
+AICw.diff
+BICs.diff 
+BICw.diff
+
+# check assumptions of models -- no violations. 
+map(mods.diff, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+mods.conf <- list()
+
+#models using confidence rating
+mods.conf[[1]] <- lm(meanAA ~ meanCR + 1, data = d)
+mods.conf[[2]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d)
+mods.conf[[3]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d)
+
+AICs.conf <- map_dbl(mods.conf, AIC)
+BICs.conf <- map_dbl(mods.conf, BIC)
+AICw.conf <- akaike.weights(AICs.conf)
+BICw.conf <- akaike.weights(BICs.conf)
+
+# Both BIC and AIC point to model 2 as best fitting (percdiff and vignette type with no interaction)
+AICs.conf
+AICw.conf
+BICs.conf 
+BICw.conf
+
+# check assumptions of models -- no violations. 
+map(mods.conf, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(mods.diff[[3]])
+
+#conf model
+summary(mods.conf[[2]]) # confidence does not help prediction.
+
+##combine best fitting models as per pre-registration.
+mod.combined <- lm(meanAA ~ meanpercdiff + meanCR + vignetteType + 1, data = d)
+summary(mod.combined)
+
+#compare combined and original model
+AICs <- c(AIC(mod.combined), AIC(mods.diff[[3]]), AIC(mods.conf[[2]]))
+AICw <- akaike.weights(AICs)
+
+AICs
+AICw
+
+##  percent difference model preferred
+mods.diff[[3]] %>% lm.beta() %>% summary()
+
+## draw graph
+d %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) + 
+  geom_text(aes(label = vignette)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Mean percentage difference (fav - unfav)") +
+  ylab("Mean ambiguity aversion rating")
+  
+
+mod.scaledAA <- lm(scale(meanAA) ~ meanpercdiff + vignetteType + 1, data = d)
+summary(mod.scaledAA)
+```
+
+## Bayesian
+
+``` {r bayes-mod-diff, warning = FALSE}
+bayesmods.diff <- list()
+
+bayesmods.diff[[1]] <- brm(meanAA ~ 1, data = d, refresh = 0, open_progress = FALSE)
+bayesmods.diff[[2]] <- brm(meanAA ~ vignetteType + 1, data = d, refresh = 0,open_progress = FALSE)
+bayesmods.diff[[3]] <- brm(meanAA ~ vignetteType + 1, data = d, refresh = 0,open_progress = FALSE)
+bayesmods.diff[[4]] <- brm(meanAA ~ meanpercdiff*vignetteType + 1, data = d, refresh = 0,open_progress = FALSE)
+
+bayesmods.conf <- list()
+
+bayesmods.conf[[1]] <- brm(meanAA ~ meanCR + 1, data = d, refresh = 0,open_progress = FALSE)
+bayesmods.conf[[2]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d, refresh = 0,open_progress = FALSE)
+bayesmods.conf[[3]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d, refresh = 0,open_progress = FALSE)
+
+#compare diff models
+bayesmods.diff <- map(bayesmods.diff, add_waic) # Add WAIC to brms object
+bayes.diff.comparison <- loo_compare(bayesmods.diff[[1]], bayesmods.diff[[2]], 
+                                    bayesmods.diff[[3]], bayesmods.diff[[4]], criterion = "waic") # compare models
+bayes.diff.comparison 
+
+#compare conf models
+bayesmods.conf <- map(bayesmods.conf, add_waic) # Add WAIC to brms object
+bayes.conf.comp <- loo_compare(bayesmods.conf[[1]], bayesmods.conf[[2]], 
+                               bayesmods.conf[[3]], criterion = "waic") # compare models
+bayes.conf.comp
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(bayesmods.diff[[3]])
+
+#conf model
+summary(bayesmods.conf[[2]])
+
+##combine models to one. 
+bayesmod.combined <- brm(meanAA ~ meanpercdiff + meanCR + vignetteType + 1, data = d, refresh = 0, open_progress = FALSE)
+bayesmod.combined <- add_waic(bayesmod.combined)
+summary(bayesmod.combined)
+
+loo_compare(bayesmod.combined, bayesmods.diff[[3]], criterion = "waic")
+
+## combined model not preffered. 
+## model with gain/loss and perc diff the best
+
+summary(bayesmods.diff[[3]])
+plot(bayesmods.diff[[3]])
+
+```
+
+# PREREGISTERED ANALYSIS USING ODDS
+
+## Remove all undefined values from dataframe
+. 
+```{r remove-inf}
+d_prereg <- d_pass[d_pass$fav_minus_unfav != 100 & d_pass$fav_minus_unfav != 100,] # cause this gives undefined odds or 0 odds (depending on which is numerator)
+
+d.pr <- d_prereg %>% group_by(vignetteType, vignetteNumber, vignette) %>% summarise(meanOddsFav = mean(oddsFav),
+                                                                               meanpercdiff = mean(fav_minus_unfav),
                                                                                 meanCR = mean(vignetteConfidence))
-d <- left_join(d, meanAAdata, by = c("vignetteType", "vignetteNumber"))
+d.pr <- left_join(d.pr, meanAAdata, by = c("vignetteType", "vignetteNumber"))
 
 #reorder
-d <- d[c(1, 3:6)]
-d
+d.pr <- d.pr[c(1, 3:7)]
+d.pr
 
 ```
 
-## Analysis ##
+## plot and descpriptive stats
 
-###freq
-```{r mods}
-mods <- list()
+```{r plot-odds}
 
-#models for odds
-mods[[1]] <- lm(meanAA ~ 1, data = d)
-mods[[2]] <- lm(meanAA ~ vignetteType + 1, data = d)
-mods[[3]] <- lm(meanAA ~ meanOddsFav + vignetteType + 1, data = d)
-mods[[4]] <- lm(meanAA ~ meanOddsFav*vignetteType + 1, data = d)
+## graph odds by vignette
+ggplot(d_prereg, aes(x = vignette, y = oddsFav - 1, fill = vignetteType)) + 
+  geom_jitter(width = 0.20, height = 0) +
+  stat_summary(fun.y=mean, geom="bar", alpha = 0.8) +
+   scale_y_continuous(breaks=seq(-1, 98, 10), labels=seq(0,99,10)) + 
+  ylab("Odds of favourable outcome") 
+# note, -1  and labels in order to move origin of bars to 1. 
 
-#models for odds
-mods[[5]] <- lm(meanAA ~ meanCR + 1, data = d)
-mods[[6]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d)
-mods[[7]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d)
+##now remove individual data points to better see averages.
+ggplot(d_prereg, aes(x = vignette, y = oddsFav - 1, fill = vignetteType)) +
+  stat_summary(fun.y=mean, geom="bar", alpha = 0.8) +
+   scale_y_continuous(breaks=seq(-1, 5, 1), labels=seq(0,6,1)) + 
+  ylab("Odds of favourable outcome") 
 
-
-AICs <- map_dbl(mods, AIC)
-BICs <- map_dbl(mods, BIC)
-AICw <- akaike.weights(AICs)
-BICw <- akaike.weights(BICs)
-
-#plots 
-map(mods, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+skim(d_prereg)
 
 ```
 
-##bayes
-``` {r bayes-mod}
-bayesmods <- list()
+## Models
 
-bayesmods[[1]] <- brm(meanAA ~ 1, data = d)
-bayesmods[[2]] <- brm(meanAA ~ vignetteType + 1, data = d)
-bayesmods[[3]] <- brm(meanAA ~ meanOddsFav + vignetteType + 1, data = d)
-bayesmods[[4]] <- brm(meanAA ~ meanOddsFav*vignetteType + 1, data = d)
+### Frequentist
 
-#models for odds
-bayesmods[[5]] <- brm(meanAA ~ meanCR + 1, data = d)
-bayesmods[[6]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d)
-bayesmods[[7]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d)
+```{r mods-freq-odds}
+mods.diff.pr <- list()
+
+#models for AA with mean percent difference
+mods.diff.pr[[1]] <- lm(meanAA ~ 1, data = d.pr)
+mods.diff.pr[[2]] <- lm(meanAA ~ vignetteType + 1, data = d.pr)
+mods.diff.pr[[3]] <- lm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr)
+mods.diff.pr[[4]] <- lm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr)
+
+## compare model fit with AIC/BIC and AIC/BIC weights. 
+AICs.diff.pr <- map_dbl(mods.diff, AIC)
+BICs.diff.pr <- map_dbl(mods.diff, BIC)
+AICw.diff.pr <- akaike.weights(AICs.diff)
+BICw.diff.pr <- akaike.weights(BICs.diff)
+
+# Both BIC and AIC point to model 2 as best fitting (percdiff and vignette type with no interaction)
+AICs.diff.pr
+AICw.diff.pr
+BICs.diff.pr 
+BICw.diff.pr
+
+# check assumptions of models -- no violations. 
+map(mods.diff.pr, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+
+mods.conf.pr <- list()
+
+#models using confidence rating
+mods.conf.pr[[1]] <- lm(meanAA ~ meanCR + 1, data = d.pr)
+mods.conf.pr[[2]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d.pr)
+mods.conf.pr[[3]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d.pr)
+
+AICs.conf.pr <- map_dbl(mods.conf, AIC)
+BICs.conf.pr <- map_dbl(mods.conf, BIC)
+AICw.conf.pr <- akaike.weights(AICs.conf)
+BICw.conf.pr <- akaike.weights(BICs.conf)
+
+# Both BIC and AIC point to model 2 as best fitting (percdiff and vignette type with no interaction)
+AICs.conf.pr
+AICw.conf.pr
+BICs.conf.pr
+BICw.conf.pr
+
+# check assumptions of models -- no violations. 
+map(mods.conf.pr, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(mods.diff.pr[[2]])
+
+#conf model
+summary(mods.conf.pr[[2]]) # confidence does not help prediction.
+
+##combine best fitting models as per pre-registration.
+mod.combined.pr <- lm(meanAA ~ meanCR + vignetteType + 1, data = d.pr)
+summary(mod.combined.pr)
+
+#compare combined and original model
+AICs.pr <- c(AIC(mod.combined.pr), AIC(mods.diff.pr[[2]]), AIC(mods.conf.pr[[2]]))
+AICw.pr <- akaike.weights(AICs)
+
+AICs.pr
+AICw.pr
+
+##  percent difference model preferred
+mods.diff.pr[[3]] %>% lm.beta() %>% summary()
+
+## draw graph
+d.pr %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) + 
+  geom_text(aes(label = vignette)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Mean percentage difference (fav - unfav)") +
+  ylab("Mean ambiguity aversion rating")
+
+mod.scaledAA.pr <- lm(scale(meanAA) ~ meanOddsFav + vignetteType + 1, data = d.pr)
+summary(mod.scaledAA.pr)
+
+```
+
+### Bayesian
+
+``` {r bayes-mod-odds}
+bayesmods.diff.pr <- list()
+
+bayesmods.diff.pr[[1]] <- brm(meanAA ~ 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.diff.pr[[2]] <- brm(meanAA ~ vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.diff.pr[[3]] <- brm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.diff.pr[[4]] <- brm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+
+bayesmods.conf.pr <- list()
+
+bayesmods.conf.pr[[1]] <- brm(meanAA ~ meanCR + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.conf.pr[[2]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.conf.pr[[3]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+
+#compare diff models
+bayesmods.diff.pr <- map(bayesmods.diff.pr, add_waic) # Add WAIC to brms object
+bayes.diff.comparison.pr <- loo_compare(bayesmods.diff.pr[[1]], bayesmods.diff.pr[[2]], 
+                                    bayesmods.diff.pr[[3]], bayesmods.diff.pr[[4]], criterion = "waic") # compare models
+bayes.diff.comparison.pr 
+
+#compare conf models
+bayesmods.conf.pr <- map(bayesmods.conf.pr, add_waic) # Add WAIC to brms object
+bayes.conf.comp.pr <- loo_compare(bayesmods.conf.pr[[1]], bayesmods.conf.pr[[2]], 
+                               bayesmods.conf.pr[[3]], criterion = "waic") # compare models
+bayes.conf.comp.pr
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(bayesmods.diff.pr[[3]])
+
+#conf model
+summary(bayesmods.conf.pr[[2]])
+
+##combine models to one. 
+bayesmod.combined.pr <- brm(meanAA ~ meanOddsFav + meanCR + vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmod.combined.pr <- add_waic(bayesmod.combined.pr)
+summary(bayesmod.combined.pr)
+
+loo_compare(bayesmod.combined.pr, bayesmods.diff.pr[[3]], criterion = "waic")
+
+## combined model not preffered. 
+## model with gain/loss and perc diff the best
+
+summary(bayesmods.diff.pr[[3]])
+plot(bayesmods.diff.pr[[3]])
 
 ```
