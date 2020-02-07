@@ -1,7 +1,7 @@
 ---
 title: "Exp2-Analysis"
 author: "Josh White"
-date: "30/08/2019"
+date: "07/02/2020"
 output: html_document
 ---
 
@@ -154,7 +154,7 @@ BICs.conf <- map_dbl(mods.conf, BIC)
 AICw.conf <- akaike.weights(AICs.conf)
 BICw.conf <- akaike.weights(BICs.conf)
 
-# Both BIC and AIC point to model 2 as best fitting (percdiff and vignette type with no interaction)
+# Both BIC and AIC point to model 2 as best fitting
 AICs.conf
 AICw.conf
 BICs.conf 
@@ -189,7 +189,7 @@ mods.diff[[3]] %>% lm.beta() %>% summary()
 d %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) + 
   geom_text(aes(label = vignette)) +
   geom_smooth(method = "lm", se = FALSE) +
-  xlab("Mean percentage difference (fav - unfav)") +
+  xlab("Mean percentage difference (fav - unfav) ") +
   ylab("Mean ambiguity aversion rating")
   
 
@@ -293,28 +293,28 @@ skim(d_prereg)
 ### Frequentist
 
 ```{r mods-freq-odds}
-mods.diff.pr <- list()
+mods.odds.pr <- list()
 
 #models for AA with mean percent difference
-mods.diff.pr[[1]] <- lm(meanAA ~ 1, data = d.pr)
-mods.diff.pr[[2]] <- lm(meanAA ~ vignetteType + 1, data = d.pr)
-mods.diff.pr[[3]] <- lm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr)
-mods.diff.pr[[4]] <- lm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr)
+mods.odds.pr[[1]] <- lm(meanAA ~ 1, data = d.pr)
+mods.odds.pr[[2]] <- lm(meanAA ~ vignetteType + 1, data = d.pr)
+mods.odds.pr[[3]] <- lm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr)
+mods.odds.pr[[4]] <- lm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr)
 
 ## compare model fit with AIC/BIC and AIC/BIC weights. 
-AICs.diff.pr <- map_dbl(mods.diff, AIC)
-BICs.diff.pr <- map_dbl(mods.diff, BIC)
-AICw.diff.pr <- akaike.weights(AICs.diff)
-BICw.diff.pr <- akaike.weights(BICs.diff)
+AICs.odds.pr <- map_dbl(mods.odds.pr, AIC)
+BICs.odds.pr <- map_dbl(mods.odds.pr, BIC)
+AICw.odds.pr <- akaike.weights(AICs.odds.pr)
+BICw.odds.pr <- akaike.weights(BICs.odds.pr)
 
 # Both BIC and AIC point to model 2 as best fitting (percdiff and vignette type with no interaction)
-AICs.diff.pr
-AICw.diff.pr
-BICs.diff.pr 
-BICw.diff.pr
+AICs.odds.pr
+AICw.odds.pr
+BICs.odds.pr 
+BICw.odds.pr
 
 # check assumptions of models -- no violations. 
-map(mods.diff.pr, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+map(mods.odds.pr, function(x){plot(fitdist(x$residuals, distr = "norm"))})
 
 
 mods.conf.pr <- list()
@@ -341,7 +341,7 @@ map(mods.conf.pr, function(x){plot(fitdist(x$residuals, distr = "norm"))})
 ## Get details for best models and combine to see if it improves. 
 
 #diff model
-summary(mods.diff.pr[[2]])
+summary(mods.odds.pr[[2]])
 
 #conf model
 summary(mods.conf.pr[[2]]) # confidence does not help prediction.
@@ -351,20 +351,20 @@ mod.combined.pr <- lm(meanAA ~ meanCR + vignetteType + 1, data = d.pr)
 summary(mod.combined.pr)
 
 #compare combined and original model
-AICs.pr <- c(AIC(mod.combined.pr), AIC(mods.diff.pr[[2]]), AIC(mods.conf.pr[[2]]))
+AICs.pr <- c(AIC(mod.combined.pr), AIC(mods.odds.pr[[2]]), AIC(mods.conf.pr[[2]]))
 AICw.pr <- akaike.weights(AICs)
 
 AICs.pr
 AICw.pr
 
 ##  percent difference model preferred
-mods.diff.pr[[3]] %>% lm.beta() %>% summary()
+mods.odds.pr[[3]] %>% lm.beta() %>% summary()
 
 ## draw graph
-d.pr %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) + 
+d.pr %>% ggplot(aes(x = meanOddsFav, y = meanAA, col = vignetteType)) + 
   geom_text(aes(label = vignette)) +
   geom_smooth(method = "lm", se = FALSE) +
-  xlab("Mean percentage difference (fav - unfav)") +
+  xlab("Mean Odds of Favourable event") +
   ylab("Mean ambiguity aversion rating")
 
 mod.scaledAA.pr <- lm(scale(meanAA) ~ meanOddsFav + vignetteType + 1, data = d.pr)
@@ -375,12 +375,12 @@ summary(mod.scaledAA.pr)
 ### Bayesian
 
 ``` {r bayes-mod-odds}
-bayesmods.diff.pr <- list()
+bayesmods.odds.pr <- list()
 
-bayesmods.diff.pr[[1]] <- brm(meanAA ~ 1, data = d.pr, refresh = 0, open_progress = FALSE)
-bayesmods.diff.pr[[2]] <- brm(meanAA ~ vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
-bayesmods.diff.pr[[3]] <- brm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
-bayesmods.diff.pr[[4]] <- brm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.odds.pr[[1]] <- brm(meanAA ~ 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.odds.pr[[2]] <- brm(meanAA ~ vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.odds.pr[[3]] <- brm(meanAA ~ meanOddsFav + vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
+bayesmods.odds.pr[[4]] <- brm(meanAA ~ meanOddsFav*vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
 
 bayesmods.conf.pr <- list()
 
@@ -389,10 +389,10 @@ bayesmods.conf.pr[[2]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d.pr, r
 bayesmods.conf.pr[[3]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d.pr, refresh = 0, open_progress = FALSE)
 
 #compare diff models
-bayesmods.diff.pr <- map(bayesmods.diff.pr, add_waic) # Add WAIC to brms object
-bayes.diff.comparison.pr <- loo_compare(bayesmods.diff.pr[[1]], bayesmods.diff.pr[[2]], 
-                                    bayesmods.diff.pr[[3]], bayesmods.diff.pr[[4]], criterion = "waic") # compare models
-bayes.diff.comparison.pr 
+bayesmods.odds.pr <- map(bayesmods.odds.pr, add_waic) # Add WAIC to brms object
+bayes.odds.comparison.pr <- loo_compare(bayesmods.odds.pr[[1]], bayesmods.odds.pr[[2]], 
+                                    bayesmods.odds.pr[[3]], bayesmods.odds.pr[[4]], criterion = "waic") # compare models
+bayes.odds.comparison.pr 
 
 #compare conf models
 bayesmods.conf.pr <- map(bayesmods.conf.pr, add_waic) # Add WAIC to brms object
@@ -402,8 +402,8 @@ bayes.conf.comp.pr
 
 ## Get details for best models and combine to see if it improves. 
 
-#diff model
-summary(bayesmods.diff.pr[[3]])
+#odds model
+summary(bayesmods.odds.pr[[3]])
 
 #conf model
 summary(bayesmods.conf.pr[[2]])
@@ -413,12 +413,12 @@ bayesmod.combined.pr <- brm(meanAA ~ meanOddsFav + meanCR + vignetteType + 1, da
 bayesmod.combined.pr <- add_waic(bayesmod.combined.pr)
 summary(bayesmod.combined.pr)
 
-loo_compare(bayesmod.combined.pr, bayesmods.diff.pr[[3]], criterion = "waic")
+loo_compare(bayesmod.combined.pr, bayesmods.odds.pr[[3]], criterion = "waic")
 
 ## combined model not preffered. 
 ## model with gain/loss and perc diff the best
 
-summary(bayesmods.diff.pr[[3]])
-plot(bayesmods.diff.pr[[3]])
+summary(bayesmods.odds.pr[[3]])
+plot(bayesmods.odds.pr[[3]])
 
 ```
