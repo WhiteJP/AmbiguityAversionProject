@@ -1,0 +1,28 @@
+body {
+    margin: auto auto;
+    margin-top: 20px;
+    width: 800px;
+    text-align: left;
+}
+
+.centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.smallTextbox {
+  width: 100px; 
+  height: 10px;
+}
+
+#instructions {
+  width: 800px;
+  text-align: left;
+}
+
+
+#largeTextbox {
+  width: 800px; 
+  height: 100px;
+}
+

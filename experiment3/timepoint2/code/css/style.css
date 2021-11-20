@@ -1,0 +1,57 @@
+body {
+    margin: auto auto;
+    margin-top: 20px;
+    width: 800px;
+    text-align: left;
+}
+
+.centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.smallTextbox {
+  width: 100px; 
+  height: 10px;
+}
+
+#instructions {
+  width: 800px;
+  text-align: left;
+}
+
+
+#largeTextbox {
+  width: 800px; 
+  height: 100px;
+}
+
+#inputx {
+  width: 30px; 
+  height: 15px;
+  text-align: center;
+  font-size: 15px;
+  margin-top: 5px;
+}
+
+#inputy {
+  width: 30px; 
+  height: 15px;
+  text-align: center;
+  font-size: 15px;
+  margin-top: 5px;
+}
+
+#slider {
+  margin-top: 7.5px;
+}
+
+input[name = "dummyconf"] {
+  margin-top: 5px;
+}
+
+input[name = "vignetteconf"] {
+  margin-top: 5px;
+}
+
+
