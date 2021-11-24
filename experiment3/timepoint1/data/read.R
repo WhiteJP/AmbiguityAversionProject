@@ -2,11 +2,11 @@ library(here)
 library(tidyverse)
 library(jsonlite)
 
-location <- here("experiment3", "timepoint2", "data")
+location <- here("experiment3", "timepoint1", "data")
 setwd(location)
 
 # read data 
-rawData <- read.csv(file="rawresults-exp3b.csv", header=TRUE)
+rawData <- read.csv(file="rawresults-exp3a.csv", header=TRUE)
 
 # convert json data to dataframe. 
 d <- rawData %>% 
@@ -48,5 +48,5 @@ d <- d  %>%
   
 
 #write to csv
-write_csv(d, "exp3b-data.csv")
+write_csv(d, "exp3a-data.csv")
 
