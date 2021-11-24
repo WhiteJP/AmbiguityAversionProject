@@ -1,10 +1,8 @@
 var subjectID = ""; s1 = ""; s2 = "";
 var exp_data = {};
 var demographics = [];
-var dummyxstart = "";
-var dummyystart = "";
-var xstart = [];
-var ystart = [];
+var dummyxstart = 0;
+var xstart = 0;
 var vignetteList = ["G1", "L1", "G2", "L2", "G5", "L5", "G9", "L10", "G11", "L11"];
 var xprob = [];
 var yprob = [];
@@ -83,16 +81,6 @@ $(document).ready(function () {
       vignOrderOK = isPermuteOK(vignetteList);
       nchecks = nchecks + 1;
     }
-    
-    // ** generate random x starting point
-    for(var i = 0; i < vignetteList.length; i++){
-      xstart[i] = Math.floor(Math.random() * 101);
-      ystart[i] = 100 - xstart[i];
-    }
-    
-    // generate random x for dummy vignette too
-    dummyxstart = Math.floor(Math.random() * 101);
-    dummyystart = 100 - dummyxstart;
         
     //SHow demogrphic page
     showDemographics();
@@ -295,12 +283,12 @@ function showVignette1(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("2");
-        $("#inputx").prop('readonly', true).val(xstart[0]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[0]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[0],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -346,12 +334,12 @@ function showVignette2(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("3");
-        $("#inputx").prop('readonly', true).val(xstart[1]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[1]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[1],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -397,12 +385,12 @@ function showVignette3(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("4");
-        $("#inputx").prop('readonly', true).val(xstart[2]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[2]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[2],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -448,12 +436,12 @@ function showVignette4(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("5");
-        $("#inputx").prop('readonly', true).val(xstart[3]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[3]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[3],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -499,12 +487,12 @@ function showVignette5(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("6");
-        $("#inputx").prop('readonly', true).val(xstart[4]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[4]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[4],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -550,12 +538,12 @@ function showVignette6(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("7");
-        $("#inputx").prop('readonly', true).val(xstart[5]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[5]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[5],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -601,12 +589,12 @@ function showVignette7(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("8");
-        $("#inputx").prop('readonly', true).val(xstart[6]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[6]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[6],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -652,12 +640,12 @@ function showVignette8(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("9");
-        $("#inputx").prop('readonly', true).val(xstart[7]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[7]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[7],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -703,12 +691,12 @@ function showVignette9(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("10");
-        $("#inputx").prop('readonly', true).val(xstart[8]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[8]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[8],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -754,12 +742,12 @@ function showVignette10(v) {
     $('#instructions').show();
     $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("11");
-        $("#inputx").prop('readonly', true).val(xstart[9]);
-        $("#inputy").prop('readonly', true).val(100 - xstart[9]);
+        $("#inputx").prop('readonly', true).val(xstart);
+        $("#inputy").prop('readonly', true).val(100 - xstart);
         $( "#slider" ).slider({
           min: 0,
           max: 100,
-          value: xstart[9],
+          value: xstart,
           step: 1,
           slide: function(event, ui) {
              $("#inputx").val(ui.value);
@@ -810,8 +798,6 @@ function saveParticipantData() {
     }
     
     // * save dummy vignette details
-    exp_data["dummyxstart"] = dummyxstart;
-    exp_data["dummyystart"] = dummyystart;
     exp_data["dummyconf"] = dummyconf;
     exp_data["dummyxprob"] = dummyxprob;
     exp_data["dummyyprob"] = dummyyprob;
@@ -821,12 +807,6 @@ function saveParticipantData() {
       
         // * save each vignette number
         exp_data["V".concat([i + 1])] = vignetteList[i]; 
-        
-        // * save each xstart number
-        exp_data["xstart".concat([i + 1])] = xstart[i];
-        
-        // * save each ystart number
-        exp_data["ystart".concat([i + 1])] = ystart[i];
         
         // * save each confidence rating
         exp_data["conf".concat([i + 1])] = conf[i]; 
