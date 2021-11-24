@@ -1,11 +1,14 @@
 var subjectID = ""; s1 = ""; s2 = "";
 var exp_data = {};
 var demographics = [];
-var vignetteAnswer = [];
-var dummyVignetteAnswer = [];
+var dummyxstart = "";
+var dummyystart = "";
+var xstart = [];
+var ystart = [];
 var vignetteList = ["G1", "L1", "G2", "L2", "G5", "L5", "G9", "L10", "G11", "L11"];
-var ord = [];
-var condition = [];
+var xprob = [];
+var yprob = [];
+var conf = [];
 
 // create function which shuffles vignettes
 // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
@@ -58,7 +61,6 @@ function isPermuteOK(array){
   
 }
 
-
 // ********** START: this function runs automatically when the page is loaded
 $(document).ready(function () {
     
@@ -68,7 +70,6 @@ $(document).ready(function () {
     s2 = "yz";
     s2 = s2.concat(Math.random().toString(36).replace('0.', '').substring(0,3));
     subjectID = s1.concat(s2);
-
     
     // 1.randomly shuffle vignetteList
     // 2. check  that it fits constraints
@@ -83,17 +84,17 @@ $(document).ready(function () {
       nchecks = nchecks + 1;
     }
     
-    // ** generate random ordering and add to make condition.
+    // ** generate random x starting point
     for(var i = 0; i < vignetteList.length; i++){
-      x = Math.floor(Math.random() * 2);
-      if (x===0) {
-            ord[i] = 'A';
-        } else {
-            ord[i] = 'B';
-        }
-      condition[i] = vignetteList[i] + ord[i];
+      xstart[i] = Math.floor(Math.random() * 101);
+      ystart[i] = 100 - xstart[i];
     }
-  
+    
+    // generate random x for dummy vignette too
+    dummyxstart = Math.floor(Math.random() * 101);
+    dummyystart = 100 - dummyxstart;
+        
+    //SHow demogrphic page
     showDemographics();
 });
 
@@ -188,15 +189,6 @@ function showInstructions() {
     $('#instructions').show();
     $('#instructions').load('html/instructions.html');
     $('#next').show();
-    $('#next').click(showInstructions2);
-}
-// ********** SHOWINSTRUCTIONS2: instructions continued
-function showInstructions2() {
-  
-    hideElements();
-    $('#instructions').show();
-    $('#instructions').load('html/instructions2.html');
-    $('#next').show();
     $('#next').click(showInstructionChecks);
 }
 
@@ -217,13 +209,14 @@ function validateInstructionChecks() {
     instructionChecks = $('#instr').serializeArray();
 
     var ok = true;
-    if (instructionChecks.length < 3) {
-      alert('Please fill out all questions.');
-      showInstructionChecks();
-      ok = fase;
+    var allanswers = true;
+    if (instructionChecks.length < 2) {
+      alert('Please complete all questions.');
+      allanswers = false;
+ 
       
     } else {
-      
+      allanswers = true;
       for (var i = 0; i < instructionChecks.length; i++) {
         // check for incorrect responses
         if(instructionChecks[i].value === "incorrect") {
@@ -233,9 +226,11 @@ function validateInstructionChecks() {
         }
       }
     }
-
+    
     // goes to next section
-    if (!ok) {
+    if (!allanswers) {
+        //showInstructionChecks;
+    } else if(!ok) {
         showInstructions(); 
     } else {
         hideElements();
@@ -245,10 +240,26 @@ function validateInstructionChecks() {
 
 // ********** SHOWDUMMYVIGNETTE: Takes participant to dummy vignette
 function showDummyVignette() {
-
-    hideElements();
+    
+    dumchanged = false;
     $('#instructions').show();
-    $('#instructions').load('html/dummyvignette.html');
+    $('#instructions').load('html/dummyvignette.html', function() {
+        $("#inputx").prop('readonly', true).val(dummyxstart);
+        $("#inputy").prop('readonly', true).val(100 - dummyxstart);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: dummyxstart,
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function( event, ui ) {
+          dumchanged = true;
+        });
+      });
     $('#next').show();
     $('#next').click(validateDummyVignette);
 }
@@ -256,15 +267,23 @@ function showDummyVignette() {
 // ********** VALIDATEDUMMYVIGNETTE: checks that they have answered the dummy vignette
 function validateDummyVignette() {
 
-    dummyVignetteAnswer = $("input[name='dummyvignette']:checked").val();
-
-    // test for empty answers
-    if (dummyVignetteAnswer > 0 && dummyVignetteAnswer < 8) {
-      hideElements();
-      showVignette1(condition[0]);
+    dummyconf = $("input[name='dummyconf']:checked").val();
+    dummyxprob = $("#inputx").val();
+    dummyyprob = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (dumchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showDummyVignette; 
+      // test for unanswered conf question
+      if (dummyconf >= 0 && dummyconf <= 4) {
+        hideElements();
+        showVignette1(vignetteList[0]);
+      } else {
+        alert('Please answer the second question.');
+        //showDummyVignette;
+      }
     }
 }
 
@@ -272,10 +291,26 @@ function validateDummyVignette() {
 function showVignette1(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("2");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[0]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[0]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[0],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette1);
 }
@@ -283,53 +318,101 @@ function showVignette1(v) {
 // ********** VALIDATEVIGNETTE 1: checks that they have answered the vignette
 function validateVignette1() {
   
-    vignetteAnswer[0] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[0] > 0 && vignetteAnswer[0] < 8) {
-      hideElements();
-      showVignette2(condition[1]);
+    conf[0] = $("input[name='vignetteconf']:checked").val();
+    xprob[0] = $("#inputx").val();
+    yprob[0] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette1(condition[0]);
+      // test for unanswered conf question
+      if (conf[0] >= 0 && conf[0] <= 4) {
+        hideElements();
+        showVignette2(vignetteList[1]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 2: Takes participant to vignette
 function showVignette2(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("3");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[1]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[1]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[1],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette2);
 }
 
-// ********** VALIDATEVIGNETTE2: checks that they have answered the vignette
+// ********** VALIDATEVIGNETTE 2: checks that they have answered the vignette
 function validateVignette2() {
   
-    vignetteAnswer[1] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[1] > 0 && vignetteAnswer[1] < 8) {
-      hideElements();
-      showVignette3(condition[2]);
+    conf[1] = $("input[name='vignetteconf']:checked").val();
+    xprob[1] = $("#inputx").val();
+    yprob[1] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette2(condition[1]);
+      // test for unanswered conf question
+      if (conf[1] >= 0 && conf[1] <= 4) {
+        hideElements();
+        showVignette3(vignetteList[2]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 3: Takes participant to vignette
 function showVignette3(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("4");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[2]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[2]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[2],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette3);
 }
@@ -337,26 +420,50 @@ function showVignette3(v) {
 // ********** VALIDATEVIGNETTE 3: checks that they have answered the vignette
 function validateVignette3() {
   
-    vignetteAnswer[2] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[2] > 0 && vignetteAnswer[2] < 8) {
-      hideElements();
-      showVignette4(condition[3]);
+    conf[2] = $("input[name='vignetteconf']:checked").val();
+    xprob[2] = $("#inputx").val();
+    yprob[2] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette3(condition[2]);
+      // test for unanswered conf question
+      if (conf[2] >= 0 && conf[2] <= 4) {
+        hideElements();
+        showVignette4(vignetteList[3]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 4: Takes participant to vignette
 function showVignette4(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("5");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[3]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[3]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[3],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette4);
 }
@@ -364,26 +471,50 @@ function showVignette4(v) {
 // ********** VALIDATEVIGNETTE 4: checks that they have answered the vignette
 function validateVignette4() {
   
-    vignetteAnswer[3] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[3] > 0 && vignetteAnswer[3] < 8) {
-      hideElements();
-      showVignette5(condition[4]);
+    conf[3] = $("input[name='vignetteconf']:checked").val();
+    xprob[3] = $("#inputx").val();
+    yprob[3] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette4(condition[3]);
+      // test for unanswered conf question
+      if (conf[3] >= 0 && conf[3] <= 4) {
+        hideElements();
+        showVignette5(vignetteList[4]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 5: Takes participant to vignette
 function showVignette5(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("6");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[4]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[4]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[4],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette5);
 }
@@ -391,26 +522,50 @@ function showVignette5(v) {
 // ********** VALIDATEVIGNETTE 5: checks that they have answered the vignette
 function validateVignette5() {
   
-    vignetteAnswer[4] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[4] > 0 && vignetteAnswer[4] < 8) {
-      hideElements();
-      showVignette6(condition[5]);
+    conf[4] = $("input[name='vignetteconf']:checked").val();
+    xprob[4] = $("#inputx").val();
+    yprob[4] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette5(condition[4]);
+      // test for unanswered conf question
+      if (conf[4] >= 0 && conf[4] <= 4) {
+        hideElements();
+        showVignette6(vignetteList[5]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 6: Takes participant to vignette
 function showVignette6(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("7");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[5]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[5]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[5],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette6);
 }
@@ -418,26 +573,50 @@ function showVignette6(v) {
 // ********** VALIDATEVIGNETTE 6: checks that they have answered the vignette
 function validateVignette6() {
   
-    vignetteAnswer[5] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[5] > 0 && vignetteAnswer[5] < 8) {
-      hideElements();
-      showVignette7(condition[6]);
+    conf[5] = $("input[name='vignetteconf']:checked").val();
+    xprob[5] = $("#inputx").val();
+    yprob[5] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette6(condition[5]);
+      // test for unanswered conf question
+      if (conf[5] >= 0 && conf[5] <= 4) {
+        hideElements();
+        showVignette7(vignetteList[6]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 7: Takes participant to vignette
 function showVignette7(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("8");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[6]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[6]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[6],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette7);
 }
@@ -445,26 +624,50 @@ function showVignette7(v) {
 // ********** VALIDATEVIGNETTE 7: checks that they have answered the vignette
 function validateVignette7() {
   
-    vignetteAnswer[6] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[6] > 0 && vignetteAnswer[6] < 8) {
-      hideElements();
-      showVignette8(condition[7]);
+    conf[6] = $("input[name='vignetteconf']:checked").val();
+    xprob[6] = $("#inputx").val();
+    yprob[6] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette7(condition[6]);
+      // test for unanswered conf question
+      if (conf[6] >= 0 && conf[6] <= 4) {
+        hideElements();
+        showVignette8(vignetteList[7]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 8: Takes participant to vignette
 function showVignette8(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("9");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[7]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[7]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[7],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette8);
 }
@@ -472,53 +675,101 @@ function showVignette8(v) {
 // ********** VALIDATEVIGNETTE 8: checks that they have answered the vignette
 function validateVignette8() {
   
-    vignetteAnswer[7] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[7] > 0 && vignetteAnswer[7] < 8) {
-      hideElements();
-      showVignette9(condition[8]);
+    conf[7] = $("input[name='vignetteconf']:checked").val();
+    xprob[7] = $("#inputx").val();
+    yprob[7] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette8(condition[7]);
+      // test for unanswered conf question
+      if (conf[7] >= 0 && conf[7] <= 4) {
+        hideElements();
+        showVignette9(vignetteList[8]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 9: Takes participant to vignette
 function showVignette9(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("10");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[8]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[8]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[8],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette9);
 }
 
-// ********** VALIDATEVIGNETTE 8: checks that they have answered the vignette
+// ********** VALIDATEVIGNETTE 9: checks that they have answered the vignette
 function validateVignette9() {
   
-    vignetteAnswer[8] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[8] > 0 && vignetteAnswer[8] < 8) {
-      hideElements();
-      showVignette10(condition[9]);
+    conf[8] = $("input[name='vignetteconf']:checked").val();
+    xprob[8] = $("#inputx").val();
+    yprob[8] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette9(condition[8]);
+      // test for unanswered conf question
+      if (conf[8] >= 0 && conf[8] <= 4) {
+        hideElements();
+        showVignette10(vignetteList[9]);
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 // ********** SHOWVIGNETTE 10: Takes participant to vignette
 function showVignette10(v) {
     
     vignettehtml = 'html/vignettes/vignette' + v + '.html';
+    vignchanged = false;
     $('#instructions').show();
-    $('#instructions').load(vignettehtml, function () {
+    $('#instructions').load(vignettehtml, function() {
         $('#v_num').text("11");
-    });
+        $("#inputx").prop('readonly', true).val(xstart[9]);
+        $("#inputy").prop('readonly', true).val(100 - xstart[9]);
+        $( "#slider" ).slider({
+          min: 0,
+          max: 100,
+          value: xstart[9],
+          step: 1,
+          slide: function(event, ui) {
+             $("#inputx").val(ui.value);
+             $("#inputy").val(100 - ui.value);
+          }
+          });
+        $( "#slider" ).on("slidechange", function(event, ui) {
+          vignchanged = true;
+        }); 
+      });
     $('#next').show();
     $('#next').click(validateVignette10);
 }
@@ -526,17 +777,25 @@ function showVignette10(v) {
 // ********** VALIDATEVIGNETTE 10: checks that they have answered the vignette
 function validateVignette10() {
   
-    vignetteAnswer[9] = $("input[name='vignette']:checked").val();
-
-    if (vignetteAnswer[9] > 0 && vignetteAnswer[9] < 8) {
-      hideElements();
-      saveParticipantData();
-      showDebrief();
+    conf[9] = $("input[name='vignetteconf']:checked").val();
+    xprob[9] = $("#inputx").val();
+    yprob[9] = $("#inputy").val();
+    
+    // test for unchanged slider
+    if (vignchanged === false) {
+      alert('Please answer the first question. You must move the slider at least once to continue.');
+      //showVignette;
     } else { 
-      alert('Please answer the question.');
-      //showVignette10(condition[9]);
+      // test for unanswered conf question
+      if (conf[9] >= 0 && conf[9] <= 4) {
+        hideElements();
+        saveParticipantData();
+        showDebrief();
+      } else {
+        alert('Please answer the second question.');
+        //showVignette;
+      }
     }
-
 }
 
 
@@ -550,18 +809,36 @@ function saveParticipantData() {
         exp_data[demographics[i].name] = demographics[i].value; 
     }
     
-    // * save dummy vignette answer dat
-    exp_data["dummyVignetteAnswer"] = dummyVignetteAnswer;
+    // * save dummy vignette details
+    exp_data["dummyxstart"] = dummyxstart;
+    exp_data["dummyystart"] = dummyystart;
+    exp_data["dummyconf"] = dummyconf;
+    exp_data["dummyxprob"] = dummyxprob;
+    exp_data["dummyyprob"] = dummyyprob;
     
-    // * save each condition (vignette number + order)
-    for (i = 0; i < condition.length; i++) {
-        exp_data["V".concat([i + 1])] = condition[i]; 
+    // ** SAVE MAIN VIGNETTE DETAILS
+    for (i = 0; i < vignetteList.length; i++) {
+      
+        // * save each vignette number
+        exp_data["V".concat([i + 1])] = vignetteList[i]; 
+        
+        // * save each xstart number
+        exp_data["xstart".concat([i + 1])] = xstart[i];
+        
+        // * save each ystart number
+        exp_data["ystart".concat([i + 1])] = ystart[i];
+        
+        // * save each confidence rating
+        exp_data["conf".concat([i + 1])] = conf[i]; 
+        
+        // * save each Xprob rating
+        exp_data["xprob".concat([i + 1])] = xprob[i];
+        
+        // * save each yprob rating
+        exp_data["yprob".concat([i + 1])] = yprob[i]; 
     }
-    // * save each answer
-    for (i = 0; i < vignetteAnswer.length; i++) {
-        exp_data["A".concat([i + 1])] = vignetteAnswer[i]; 
-    }
-     
+    
+
     console.log(exp_data);
     saveData(exp_data);    
 }

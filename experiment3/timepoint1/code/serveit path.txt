@@ -1,1 +1,1 @@
-C:\Python27\python.exe  C:\Users\joshu\Desktop\GitHub\AmbiguityAversionProject\experiment3\timepoint1\code\serveit.py 8000
+C:\Python27\python.exe  C:\Users\joshu\Desktop\GitHub\AmbiguityAversionProject\experiment3\timepoint2\code\serveit.py 8000
