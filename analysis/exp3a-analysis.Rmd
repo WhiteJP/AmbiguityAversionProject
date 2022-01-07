@@ -1,0 +1,350 @@
+---
+title: "Experiment 3 Timepoint 1 Analysis"
+author: "Josh White"
+date: "03/01/2022"
+output: 
+  html_document:
+    df_print: paged
+    theme: journal
+    code_folding: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+        collapsed: false
+        smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, cache = TRUE, message = FALSE)
+
+library(tidyverse)
+library(here)
+
+# Visualisation
+library(ggsci)
+library(ggrepel)
+library(moderndive) # for geom_parallel_slopes_function because there is no way to do this in 
+
+# Modeling
+library(lme4)
+library(ordinal) # for clmm function
+library(brms) # for Bayesian analyses
+
+# Tables
+library(flextable)
+library(ftExtra)
+
+theme_set(theme_classic())
+
+set.seed(3838)
+```
+
+# Introductory Steps
+
+## Load Packages and set seed for reproducibility
+
+```{r load-packages, eval = FALSE}
+library(tidyverse)
+library(here)
+
+# Visualisation
+library(ggsci)
+library(ggrepel)
+library(moderndive) # for geom_parallel_slopes_function because there is no way to do this in 
+
+# Modeling
+library(lme4)
+library(ordinal) # for clmm function
+library(brms) # for Bayesian analyses
+
+# Tables
+library(flextable)
+library(ftExtra)
+
+theme_set(theme_classic())
+
+set.seed(3838)
+```
+
+## Import Data
+
+```{r import-data, warning = FALSE}
+d <- read_csv(
+  here::here("experiment3", "timepoint1", "data", "exp3a-data.csv"),
+  na = c("", "NA", "na")
+  )
+
+#make factors 
+d <- d %>% 
+  mutate(
+    gender = factor(gender),
+    income = factor(income, levels = c("<20k", "20to40k", "40to60K", "60to80k", "80to100k", ">100k")), 
+    vignette = factor(vignette, levels = c("G1", "G2", "G5", "G9", "G11", 
+                                           "L1", "L2", "L5", "L10", "L11"))
+  )
+
+#get prior and other variables needed for models
+d <- d %>%  
+  mutate(
+    prior = case_when(
+      grepl("G", vignette) ~ xprob - yprob,
+      grepl("L", vignette) ~ yprob - xprob
+    ),
+    direction = case_when(
+      grepl("G", vignette) ~ "G",
+      grepl("L", vignette) ~ "L"
+    )
+  )
+
+#get whether passed attn_check or not
+d <- d %>% 
+  mutate(
+    attn_pass = dummyxprob > 50
+  )
+
+# get basic descriptives before exclusion
+demo_d <- d %>% 
+  distinct(subject, gender, age, education, income, attn_pass)
+
+demo_d %>%  skimr::skim()
+
+demo_d %>% 
+  count(gender) %>% 
+  arrange(desc(n)) %>% 
+  flextable::flextable()
+
+demo_d %>% 
+  ggplot(aes(x = age)) + 
+  geom_histogram(fill = "light blue", col = "black") +
+  annotate(geom = "text", x = 60, y = 25,
+            label = paste0("M (SD) = ", round(mean(demo_d$age), 2), " (", round(sd(demo_d$age), 2), ")")
+  )
+
+
+demo_d %>% 
+  ggplot(aes(x = education)) + 
+  geom_histogram(fill = "light blue", col = "black") +
+  annotate(geom = "text", x = 25, y = 50,
+            label = paste0("M (SD) = ", round(mean(demo_d$education, na.rm = TRUE), 2), 
+                           " (", round(sd(demo_d$education, na.rm = TRUE), 2), ")")
+  )
+
+
+demo_d %>% 
+  count(income) %>% 
+  arrange(desc(n)) %>% 
+  flextable::flextable()
+
+```
+
+### exclude participants
+
+```{r exclude}
+#check whether observations fail instruction checks
+demo_d %>% 
+  count(attn_pass) %>% 
+  flextable::flextable()
+
+#get list of participants that failed attention check 
+subjID_pass <- demo_d$subject[demo_d$attn_pass]
+subjID_fail <- demo_d$subject[!demo_d$attn_pass]
+
+# write both to csv
+write.csv(subjID_pass, "subjID_pass.csv")
+write.csv(subjID_fail, "subjID_fail.csv")
+
+d_pass <- d[d$attn_pass, ]
+
+```
+
+### descriptives
+
+```{r datawrangle, fig.height=7, fig.width = 5}
+library(ggdist)
+
+d_pass %>% 
+  ggplot(aes(x = prior)) +
+  geom_density() +
+  facet_wrap(~vignette)
+
+# using ggdists
+d_pass %>% 
+  ggplot(aes(x = prior, y = fct_rev(vignette), fill = vignette)) +
+  stat_halfeye(point_interval = "mean_hdci",
+               .width = c(.66, .95),
+               slab_alpha = 0.5,
+               normalize = "groups", 
+               show.legend = FALSE) +
+  ggsci::scale_fill_d3() +
+  labs(y = "vignette",
+       caption = paste(sep = "\n", 
+                       "'prior' coded as P(favourable event) - P(unfavourable event).",
+                       "positive values indicate optimistic prior beliefs", 
+                       "negative values indicate pessimistic prior beliefs")
+       )
+
+  # scatter and means
+d_pass %>% 
+  ggplot(aes(x = vignette, y = prior, fill = direction)) +
+  geom_jitter(alpha = 0.25) +
+  stat_summary(geom = "bar", fun = mean, alpha = 0.75) +
+  stat_summary(geom = "errorbar", fun.data = mean_se, alpha = 0.75, width = 0.5) 
+
+
+## confidence ratings
+d_pass %>% 
+  ggplot(aes(x = vignette, y = conf, fill = direction)) +
+  geom_jitter(alpha = 0.1) +
+  stat_summary(fun = mean, geom = "point", alpha = 1, col = "black", shape = 22, size = 2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.25, size = 0.5, linetype = 1, show.legend = FALSE) +
+  xlab("Vignette") +
+  ylab("Confidence rating") +
+  scale_y_continuous(breaks = 0:4, labels = c("None", "Slight", "Moderate", "Very", "Extreme")) +
+  scale_fill_manual(values = c("dodgerblue", "red2"))
+
+
+```
+
+
+## Order effects here
+
+There is evidence of some order effects here. In both Bayesian and Frequentist manifestations, the IC is lower for the model including `trialn` parameter than the null model. This effect is quite small, and equates to a 4.3 point increase in `prior` for the last trial compared to the first trial. 
+
+```{r,  class.source = "fold-show"}
+library(lme4)
+
+m0 <- lmer(prior ~ 1 + (1|subject) + (1|vignette), d_pass)
+m_order <- lmer(prior ~ 1 + trialn + (1|subject) + (1|vignette), d_pass)
+
+AIC(m0)
+AIC(m_order)
+
+summary(m0)
+summary(m_order)
+
+#bayes
+m0_bayes <- brm(prior ~ 1 + (1|subject) + (1|vignette), 
+                data = d_pass,
+                cores = 4,
+                refresh = 0, open_progress = FALSE)
+
+m_order_bayes <- brm(prior ~ 1 + trialn + (1|subject) + (1|vignette), 
+                     data = d_pass, 
+                     cores = 4,
+                     refresh = 0, open_progress = FALSE)
+
+#MODELS
+m0_bayes %>%  summary()
+m_order_bayes %>%  summary()
+
+##LOO COMPARE
+loo(m0_bayes)
+loo(m_order_bayes)
+
+## Plot to see  -- effect is very small
+d_pass %>% 
+  ggplot(aes(x = trialn, y = prior)) +
+  geom_jitter() +
+  geom_smooth(method = "lm")
+
+## distribution at each timepoint 
+
+d_pass %>% 
+  ggplot(aes(x = trialn, fill = vignette)) +
+  geom_bar() +
+  ggsci::scale_fill_d3()
+
+#our pattern of only accepting the pair vignette that was three apart, selected a distribution in which 
+# the non-pairs were more likely in the middle of the order, while the paris were more likely at the end. 
+
+# no clear or consistent relationship among vignettes. 
+d_pass %>% 
+  ggplot(aes(x = trialn, y = prior)) +
+  geom_jitter() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~vignette)
+
+
+```
+
+```{r, fig.width = 7, fig.height= 10}
+
+#pattern not obvious at the individual level
+d_pass %>% 
+  ggplot(aes(x = trialn, y = prior)) +
+  geom_line() +
+  facet_wrap(~subject, ncol = 11) +
+  scale_x_continuous(breaks = c(2, 5, 8)) +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    #axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+## Relative order effects
+
+Relative order has small effect on responses. When the gain response is shown first there is on average a 3.5 point more favourable `prior` rating higher when gain vignette is shown first than when loss is shown first.  
+
+```{r, class.source = "fold-show"}
+d_pairs <- d_pass %>% 
+  filter(vignette %in% c("G1", "L1", "G2", "L2", "G5", "L5"))
+
+d_pairs <- d_pairs %>% 
+  mutate(
+    pair = case_when(
+      vignette %in% c("G1", "L1") ~ "ones",
+      vignette %in% c("G2", "L2") ~ "twos",    
+      vignette %in% c("G5", "L5") ~ "fives",    
+    )
+)
+
+#code rel_order variable, which is TRUE when gain version of pair occurs first and FALSE when Loss version is
+d_pairs <- d_pairs %>% 
+  group_by(pair, subject) %>% 
+  mutate(
+    rel_order_gfirst = trialn[grepl("G", vignette)] < trialn[grepl("L", vignette)]
+  ) %>% 
+  ungroup()
+
+## MODEL
+#freq
+m0_pairs <- lmer(prior ~ 1 + (1|subject) + (1|vignette), d_pairs)
+m_relorder <- lmer(prior ~ 1 + rel_order_gfirst + (1|subject) + (1|vignette), d_pairs)
+
+AIC(m0_pairs)
+AIC(m_relorder)
+
+summary(m0_pairs)
+summary(m_relorder)
+
+
+#bayes
+m0_pairs_bayes <- brm(prior ~ 1 + (1|subject) + (1|vignette), 
+                data = d_pairs,
+                cores = 4,
+                refresh = 0, open_progress = FALSE)
+
+m_relorder_bayes <- brm(prior ~ 1 + rel_order_gfirst + (1|subject) + (1|vignette), 
+                        #refresh = 0, open_progress = FALSE,
+                        data = d_pairs, 
+                        cores = 4)
+
+#MODELS
+m0_pairs_bayes %>%  summary()
+m_relorder_bayes %>%  summary()
+
+##LOO COMPARE
+loo(m0_pairs_bayes)
+loo(m_relorder_bayes)
+
+
+## plot
+##pattern doesn't appear to be obvious. but overall, higher when gain is first than when gain is second. 
+d_pairs %>% 
+  ggplot(aes(x = vignette, y = prior, fill = rel_order_gfirst)) +
+  stat_summary(geom = "bar", fun = "mean", position = "dodge") +
+  geom_jitter()
+  
+```
