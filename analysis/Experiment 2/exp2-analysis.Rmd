@@ -1,0 +1,645 @@
+---
+title: "Exp2-Analysis"
+author: "Josh White"
+date: "17/02/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, cache = TRUE, message = FALSE)
+options(round = 4)
+
+library(tidyverse)
+library(here)
+library(car) 
+library(brms)
+library(skimr)
+library(qpcR) #for aikake.weights()
+library(fitdistrplus) # for statistical plots and tests for fitting distributions
+library(lm.beta)
+library(rstatix)
+
+library(ggthemes)
+library(ggpubr)
+library(ggsci)
+library(ggrepel)
+library(moderndive) # for geom_parallel_slpes_functoin because there is no way to do this in 
+library(cowplot)
+
+theme_set(theme_classic())
+
+set.seed(1298)
+```
+
+# Introductory Steps
+
+## Load Packages and set seed for reproducibility
+
+```{r load-packages, eval = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, cache = TRUE, message = FALSE)
+#options(round = 4)#sets inline code, and all code to only show 4 decimal places.
+
+library(tidyverse)
+library(here)
+library(car) 
+library(brms)
+library(skimr)
+library(qpcR) #for aikake.weights()
+library(fitdistrplus) # for statistical plots and tests for fitting distributions
+library(lm.beta)
+library(rstatix)
+
+library(ggthemes)
+library(ggpubr)
+library(ggsci)
+library(ggrepel)
+library(moderndive) # for geom_parallel_slpes_functoin because there is no way to do this in 
+library(cowplot)
+
+theme_set(theme_classic())
+
+set.seed(1298)
+```
+
+## Import Data
+
+```{r import-data, warning = FALSE}
+data <- read_csv("exp2data.csv", col_types = "ffffffiiiiiififc")
+data <- data %>% filter(age != 99) #remove andy test from dataset
+glimpse(data)
+
+#load previous data`
+load("../Experiment 1/exp1d.Rda")
+
+# get means for each vignette
+meanAAdata <- exp1d %>% group_by(vignetteType, vignetteNumber) %>% summarise(meanAA = mean(vignetteAnswer))
+meanAAdata
+
+```
+
+## Data Wrangling
+
+```{r wrangle}
+## mutate to get differences between priors
+data <- data %>% mutate(fav_minus_unfav = vignetteXprob - vignetteYprob)
+data$fav_minus_unfav[data$vignetteType == "L"] <- -(data$fav_minus_unfav[data$vignetteType == "L"]) # opposite sign for losses cause Y is favourable
+
+#reset order of vignette factor from G1 to L12 for easy graphing
+data$vignette <- factor(data$vignette, levels = c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))))
+
+```
+
+### exclude participants
+
+```{r exclude}
+#check whether observations fail instruction checks
+instr_fail <- data$postQuestion1 == "incorrect" | data$dummyXprob <= 50
+
+#remove data from main dataset and save for possible later analysis (was a particular question more confusing etc?)
+d_removed <- data[instr_fail,]
+d_pass <- data[!instr_fail,]
+
+#demographic info pre exclusion
+data %>% skim()
+data$age %>% mean()
+data$age %>% sd()
+
+#number failed checks
+d_removed %>% nrow()
+
+#demographic info post exclusion
+d_pass %>% skim()
+d_pass$age %>% mean()
+d_pass$age %>% sd()
+
+```
+
+### Get final dataset for regression models.
+
+```{r datawrangle}
+
+## summarise data to get mean percent difference of priors and meanCR
+d <- d_pass %>% group_by(vignetteType, vignetteNumber, vignette) %>% summarise(meanpercdiff = mean(fav_minus_unfav),
+                                                                                meanCR = mean(vignetteConfidence))
+d <- left_join(d, meanAAdata, by = c("vignetteType", "vignetteNumber"))
+
+#reorder
+d <- d[c(1, 3:6)]
+d
+
+```
+
+# ANALYSIS 
+
+## plot and descriptives
+```{r plot-diff}
+ppests <- ggplot(d_pass, aes(x = vignette, y = fav_minus_unfav, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, shape = 16) +
+  stat_summary(fun = mean, geom = "bar", alpha = 0.7, col = "black") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.25, size = 0.5, linetype = 1, show.legend = FALSE) +
+  xlab("Vignette") +
+  ylab("P(Favourable) - P(Unfavourable)") +
+  scale_fill_manual(values = c("dodgerblue", "red2")) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8))
+
+skim(d_pass)
+
+#ggsave("exp2graph.png", height = 75, width = 150, units = "mm")
+
+# get hisogram of confidence rating
+
+crs <- ggplot(d_pass, aes(x = vignette, y = vignetteConfidence, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, size = 1) +
+  stat_summary(fun = mean, geom = "point", alpha = 1, col = "black", shape = 22, size = 2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.25, size = 0.5, linetype = 1, show.legend = FALSE) +
+  xlab("Vignette") +
+  ylab("Confidence rating") +
+  scale_y_continuous(breaks = 0:4, labels = c("None", "Slight", "Moderate", "Very", "Extreme")) +
+  scale_fill_manual(values = c("dodgerblue", "red2")) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8))
+
+ggplot(d_pass, aes(x = vignetteConfidence)) +
+  geom_histogram()
+
+# look at relationship between CR and priors - 
+#first vis
+ggplot(d_pass, aes(x = fav_minus_unfav, y = vignetteConfidence)) +
+  geom_jitter() +
+  geom_smooth(method= "lm", se = FALSE)
+
+# get both pearson and spearman correlations, just to check  -- lots of heteroskedasticicy
+cor.test(d_pass$vignetteConfidence, d_pass$fav_minus_unfav, method = "pearson")
+rstatix::cor_test(d_pass, vignetteConfidence, fav_minus_unfav, method = "pearson")
+
+#spearman
+cor.test(d_pass$vignetteConfidence, d_pass$fav_minus_unfav, method = "spearman")
+rstatix::cor_test(d_pass, vignetteConfidence, fav_minus_unfav, method = "spearman")
+
+
+#how about absoulute priors are they more certain the closer they are to 0. 
+
+#vis ualise
+ggplot(d_pass, aes(x = abs(fav_minus_unfav), y = vignetteConfidence)) +
+  geom_jitter() +
+  geom_smooth(method= "lm", se = FALSE)
+
+# get both pearson and spearman correlations 
+cor.test(d_pass$vignetteConfidence, abs(d_pass$fav_minus_unfav), method = "pearson")
+d_pass %>%
+  mutate(abs_fmu = abs(fav_minus_unfav))  %>%
+rstatix::cor_test(vignetteConfidence, abs_fmu, method = "pearson")
+
+#spearman now
+cor.test(d_pass$vignetteConfidence, abs(d_pass$fav_minus_unfav), method = "spearman")
+d_pass %>%
+  mutate(abs_fmu = abs(fav_minus_unfav))  %>%
+rstatix::cor_test(vignetteConfidence, abs_fmu, method = "spearman")
+
+
+
+
+#get cowplot
+plot_grid(ppests, crs, labels = "AUTO", ncol = 1, align = "v", label_size = 10)
+#ggsave("exp2graph.png", height = 125, width = 150, units = "mm")
+
+```
+
+## Models
+
+### Frequentist
+
+```{r mods-freq-diff}
+# first make sure that there is no difference on account of start point
+lm(fav_minus_unfav ~ 1, data = d_pass) %>% summary()
+lm(fav_minus_unfav ~ Start100, data = d_pass) %>% summary()
+
+lm(fav_minus_unfav ~ 1, data = d_pass) %>% AIC()
+lm(fav_minus_unfav ~ Start100, data = d_pass) %>% AIC()
+
+# now compare main models
+mods.diff <- list()
+
+#models for AA with mean percent difference
+mods.diff[[1]] <- lm(meanAA ~ 1, data = d)
+mods.diff[[2]] <- lm(meanAA ~ vignetteType + 1, data = d)
+mods.diff[[3]] <- lm(meanAA ~ meanpercdiff + 1, data = d)
+mods.diff[[4]] <- lm(meanAA ~ meanpercdiff + vignetteType + 1, data = d)
+mods.diff[[5]] <- lm(meanAA ~ meanpercdiff*vignetteType + 1, data = d)
+
+## compare model fit with AIC/BIC and AIC/BIC weights. 
+AICs.diff <- map_dbl(mods.diff, AIC)
+BICs.diff <- map_dbl(mods.diff, BIC)
+AICw.diff <- akaike.weights(AICs.diff)
+BICw.diff <- akaike.weights(BICs.diff)
+
+# Both BIC and AIC point to model 3 as best fitting (percdiff and vignette type with no interaction)
+AICs.diff 
+AICw.diff
+BICs.diff 
+BICw.diff
+
+mods.diff[[3]] %>% summary()
+# check assumptions of models -- no violations. 
+map(mods.diff, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+mods.conf <- list()
+
+#models using confidence rating
+mods.conf[[1]] <- lm(meanAA ~ meanCR + 1, data = d)
+mods.conf[[2]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d)
+mods.conf[[3]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d)
+
+AICs.conf <- map_dbl(mods.conf, AIC)
+BICs.conf <- map_dbl(mods.conf, BIC)
+AICw.conf <- akaike.weights(AICs.conf)
+BICw.conf <- akaike.weights(BICs.conf)
+
+# Both BIC and AIC point to model 2 as best fitting
+AICs.conf
+AICw.conf
+BICs.conf 
+BICw.conf
+
+# check assumptions of models -- no violations. 
+map(mods.conf, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(mods.diff[[4]])
+
+#conf model
+summary(mods.conf[[2]]) # confidence does not help prediction.
+
+##combine best fitting models as per pre-registration.
+mod.combined <- lm(meanAA ~ meanpercdiff + meanCR + vignetteType + 1, data = d)
+summary(mod.combined)
+AIC(mod.combined)
+
+##ALSO GET INTERACTION MODEL FOR COMPLETENESS
+mod.combined.int <- lm(meanAA ~  meanCR + meanpercdiff*vignetteType + 1, data = d)
+summary(mod.combined.int)
+AIC(mod.combined.int)
+
+#compare combined and original model
+AICs <- c(AIC(mod.combined), AIC(mods.diff[[4]]), AIC(mods.conf[[2]]))
+AICw <- akaike.weights(AICs)
+
+AICs
+AICw
+
+##  percent difference model preferred
+mods.diff[[4]] %>% lm.beta() %>% summary()
+mod <- mods.diff[[4]]
+
+mod.scaledAA <- lm(scale(meanAA) ~ meanpercdiff + vignetteType + 1, data = d)
+summary(mod.scaledAA)
+
+## draw graph
+d %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) + 
+  geom_text(aes(label = vignette), size = 4, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, size = 1) +
+  xlab("Mean percentage difference (fav - unfav) ") +
+  ylab("Mean ambiguity aversion rating") +
+  scale_colour_manual(values = c("dodgerblue", "red2")) +
+  scale_x_continuous(breaks = seq(-60, 20, by = 10), limits = c(-60, 20)) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12)) +
+geom_hline(yintercept = 0, linetype = 2, alpha = .8) +
+geom_vline(xintercept = 0, linetype = 2, alpha = .8)
+
+## draw graph
+reggraph <- d %>% ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) +
+  geom_point() +
+  geom_text_repel(aes(label = vignette), size = 3, alpha = 0.8, 
+                   force = 10, min.segment.length = unit(0, "mm"),
+                    label.padding = unit(0, "mm"),
+                  fontface = "bold") +
+  geom_smooth(method = "lm", se = FALSE, size = 1) +
+  xlab("Mean percentage difference (favourable - unfavourable)") +
+  ylab("Mean ambiguity aversion") +
+  scale_colour_manual(values = c("dodgerblue", "red2")) +
+  scale_x_continuous(breaks = seq(-60, 20, by = 10), limits = c(-60, 20)) +
+  ylim(c(-0.5, 1.7)) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8)) +
+geom_hline(yintercept = 0, linetype = 2, alpha = .5) +
+geom_vline(xintercept = 0, linetype = 2, alpha = .5) +
+annotate(geom = "label", label = "Unfavourable event\nmore likely", x = -30, y = 1.5, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Favourable event\nmore likely", x = 12.5, y = 1.5, fill = "gray95", size = 2.5) +
+ #annotate(geom = "text", label = "Ambiguity\nAversion", x = -60, y = .75, angle = 90) +
+#annotate(geom = "text", label = "Information\nSeeking", x = -60, y = -0.3, angle = 90)+
+annotate(geom = "label", label = "Ambiguity\nAversion", x = -50, y = .75, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Ambiguity\nSeeking", x = -50, y = -0.3, fill = "gray95",  size = 2.5)
+
+
+
+```
+
+# Diagnostics
+
+``` {r diagnostics}
+#maybe try analysis with unfavourable event - favourable event. mIght be a little easier to understand
+
+# need to run diagnostics - need to run model with bayesian analysis and priors.
+library(ggfortify)
+autoplot(mods.diff[4])
+
+library(car)
+influencePlot(mod, main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+leveragePlots(mod)
+avPlots(mod)
+plot(mod)
+plot(mod, which = 4)
+
+library(broom)
+augment(mod)
+dfbetas(mod)
+dfbeta(mod)
+
+influence.measures(mod)
+#1.1 is highest  cooks D - this is influential. Do analysis with out it.  
+
+d_md <- d %>% ungroup %>% dplyr::select(meanAA, meanpercdiff) 
+
+mahalanobis(d_md, colMeans(d_md), cov(d_md)) 
+
+```
+
+```{r analysis without outlier}
+# analysis without it 
+d_noG1 <- d %>% filter(vignette != "G1")
+
+mods.diff1 <- list()
+
+#models for AA with mean percent difference
+mods.diff1[[1]] <- lm(meanAA ~ 1, data = d_noG1)
+mods.diff1[[2]] <- lm(meanAA ~ vignetteType + 1, data = d_noG1)
+mods.diff1[[3]] <- lm(meanAA ~ meanpercdiff + 1, data = d_noG1)
+mods.diff1[[4]] <- lm(meanAA ~ meanpercdiff + vignetteType + 1, data = d_noG1)
+mods.diff1[[5]] <- lm(meanAA ~ meanpercdiff*vignetteType + 1, data = d_noG1)
+
+## compare model fit with AIC/BIC and AIC/BIC weights. 
+AICs.diff1 <- map_dbl(mods.diff1, AIC)
+BICs.diff1 <- map_dbl(mods.diff1, BIC)
+AICw.diff1 <- akaike.weights(AICs.diff1)
+BICw.diff1 <- akaike.weights(BICs.diff1)
+
+# Both BIC and AIC point to model 3 as best fitting (percdiff and vignette type with no interaction)
+AICs.diff1
+AICw.diff1
+BICs.diff1 
+BICw.diff1
+
+mods.diff1[[3]] %>% summary()
+
+# check assumptions of models -- no violations. 
+map(mods.diff1, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+mods.conf1 <- list()
+
+#models using confidence rating
+mods.conf1[[1]] <- lm(meanAA ~ meanCR + 1, data = d_noG1)
+mods.conf1[[2]] <- lm(meanAA ~ meanCR + vignetteType + 1, data = d_noG1)
+mods.conf1[[3]] <- lm(meanAA ~ meanCR*vignetteType + 1, data = d_noG1)
+
+AICs.conf1 <- map_dbl(mods.conf1, AIC)
+BICs.conf1 <- map_dbl(mods.conf1, BIC)
+AICw.conf1 <- akaike.weights(AICs.conf1)
+BICw.conf1 <- akaike.weights(BICs.conf1)
+
+# Both BIC and AIC point to model 2 as best fitting
+AICs.conf1
+AICw.conf1
+BICs.conf1
+BICw.conf1
+
+# check assumptions of models -- no violations. 
+map(mods.conf1, function(x){plot(fitdist(x$residuals, distr = "norm"))})
+
+## Get details for best models and combine to see if it improves. 
+
+#diff model
+summary(mods.diff1[[2]])
+
+#conf model
+summary(mods.conf1[[2]]) # confidence does not help prediction.
+
+##combine best fitting models (not as per preregistration as if original data, but the same as was done for all 24 vignettes - to compare).
+mod.combined1 <- lm(meanAA ~ meanCR + meanpercdiff + vignetteType + 1, data = d_noG1)
+summary(mod.combined1)
+
+##ALSO GET INTERACTION MODEL FOR COMPLETENESS
+mod.combined1.int <- lm(meanAA ~  meanCR + meanpercdiff*vignetteType + 1, data = d_noG1)
+summary(mod.combined1.int)
+AIC(mod.combined1.int)
+
+
+#compare combined and original model
+AICs1 <- c(AIC(mod.combined1), AIC(mods.diff1[[2]]), AIC(mods.conf1[[1]]))
+AICw1 <- akaike.weights(AICs)
+
+AICs1
+AICw1
+
+##  percent difference model preferred
+mods.diff1[[2]] %>% lm.beta() %>% summary()
+mod1 <- mods.diff1[[2]]
+
+mod.scaledAA1 <- lm(scale(meanAA) ~  vignetteType + 1, data = d_noG1)
+summary(mod.scaledAA1)
+
+
+
+
+## GRAPH  ##
+reggraph <- d %>% 
+  ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) +
+  geom_point() +
+  geom_text_repel(aes(label = vignette), size = 4.5, alpha = 0.8, 
+                   force = 10, min.segment.length = unit(0, "mm"),
+                    label.padding = unit(0, "mm"),
+                  fontface = "bold") +
+  moderndive::geom_parallel_slopes(method = "lm", se = FALSE, size = 1, alpha = 0.8) +
+  xlab("Mean priors, P(Favourable) - P(Unfavourable)") +
+  ylab("Mean ambiguity aversion") +
+  scale_colour_manual(values = c("dodgerblue", "red2")) +
+  scale_x_continuous(breaks = seq(-60, 20, by = 10), limits = c(-60, 20)) +
+  ylim(c(-0.5, 1.7)) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 17),
+        axis.title = element_text(size = 18)) +
+geom_hline(yintercept = 0, linetype = 2, alpha = .8) +
+geom_vline(xintercept = 0, linetype = 2, alpha = .8) +
+annotate(geom = "label", label = "Unfavourable event\nmore likely", x = -30, y = 1.5, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Favourable event\nmore likely", x = 12.5, y = 1.5, fill = "gray95", size = 2.5) +
+ #annotate(geom = "text", label = "Ambiguity\nAversion", x = -60, y = .75, angle = 90) +
+#annotate(geom = "text", label = "Information\nSeeking", x = -60, y = -0.3, angle = 90)+
+annotate(geom = "label", label = "Ambiguity\nAversion", x = -55, y = .75, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Ambiguity\nSeeking", x = -55, y = -0.3, fill = "gray95", size = 2.5)
+
+# without colour difference
+reggraph_noG1 <- d_noG1 %>% 
+  ggplot(aes(x = meanpercdiff, y = meanAA, col = vignetteType)) +
+  geom_point() +
+  geom_text_repel(aes(label = vignette), size = 3, alpha = 0.8, 
+                   force = 10, min.segment.length = unit(0, "mm"),
+                    label.padding = unit(0, "mm"),
+                  fontface = "bold") +
+  moderndive::geom_parallel_slopes(method = "lm", se = FALSE, size = 1, alpha = 0.8) +
+  xlab("Mean priors, P(Favourable) - P(Unfavourable)") +
+  ylab("Mean ambiguity aversion") +
+  scale_colour_manual(values = c("dodgerblue", "red2")) +
+  scale_x_continuous(breaks = seq(-60, 20, by = 10), limits = c(-60, 20)) +
+  ylim(c(-0.5, 1.7)) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8)) +
+geom_hline(yintercept = 0, linetype = 2, alpha = .8) +
+geom_vline(xintercept = 0, linetype = 2, alpha = .8) +
+annotate(geom = "label", label = "Unfavourable event\nmore likely", x = -30, y = 1.5, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Favourable event\nmore likely", x = 12.5, y = 1.5, fill = "gray95", size = 2.5) +
+#annotate(geom = "text", label = "Ambiguity\nAversion", x = -60, y = .75, angle = 90) +
+#annotate(geom = "text", label = "Information\nSeeking", x = -60, y = -0.3, angle = 90)+
+annotate(geom = "label", label = "Ambiguity\nAversion", x = -55, y = .75, fill = "gray95", size = 2.5) +
+annotate(geom = "label", label = "Ambiguity\nSeeking", x = -55, y = -0.3, fill = "gray95", size = 2.5)
+
+#cowplot
+plot_grid(reggraph, reggraph_noG1, labels = "AUTO", ncol = 1, align = "v", label_size = 10)
+#ggsave("exp2reggraph.png", height = 4.5, width = 6)
+
+
+```
+
+## Bayesian
+
+``` {r bayes-mod-diff, warning = FALSE}
+# first make sure that there is no difference on account of start point
+bayes_ord_effects <- brm(fav_minus_unfav ~ 1, data = d_pass, seed = 1298) 
+bayes_ord_effects1 <- brm(fav_minus_unfav ~ Start100, data = d_pass, seed = 1298)
+
+summary(bayes_ord_effects)
+summary(bayes_ord_effects1)
+
+loo(bayes_ord_effects)$estimates
+loo(bayes_ord_effects1)$estimates
+
+# now compare main models
+
+bayesmods.diff <- list()
+
+bayesmods.diff[[1]] <- brm(meanAA ~ 1, data = d, cores = 4, seed = 1298)
+bayesmods.diff[[2]] <- brm(meanAA ~ vignetteType + 1, data = d, cores = 4, seed = 1298)
+bayesmods.diff[[3]] <- brm(meanAA ~ meanpercdiff + 1, data = d, cores = 4, seed = 1298)
+bayesmods.diff[[4]] <- brm(meanAA ~ meanpercdiff + vignetteType + 1, data = d, cores = 4, seed = 1298)
+bayesmods.diff[[5]] <- brm(meanAA ~ meanpercdiff*vignetteType + 1, data = d, cores = 4, seed = 1298)
+
+bayesmods.conf <- list()
+
+bayesmods.conf[[1]] <- brm(meanAA ~ meanCR + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+bayesmods.conf[[2]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+bayesmods.conf[[3]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d, refresh = 0, open_progress = FALSE, cores = 4, seed = 1298)
+
+## SIMPLE ANSWERS 
+prior_summary(bayesmods.diff[[2]])
+
+summary(bayesmods.diff[[1]])
+summary(bayesmods.diff[[2]])
+summary(bayesmods.diff[[3]])
+summary(bayesmods.diff[[4]])
+summary(bayesmods.diff[[5]])
+
+summary(bayesmods.conf[[1]])
+summary(bayesmods.conf[[2]])
+summary(bayesmods.conf[[3]])
+
+## get LOOIC values
+loo(bayesmods.diff[[1]])$estimates
+loo(bayesmods.diff[[2]])$estimates
+loo(bayesmods.diff[[3]])$estimates
+loo(bayesmods.diff[[4]])$estimates
+loo(bayesmods.diff[[5]])$estimates
+
+loo(bayesmods.conf[[1]])$estimates
+loo(bayesmods.conf[[2]])$estimates
+loo(bayesmods.conf[[3]])$estimates
+
+bayesmod.comb <- brm(meanAA ~ meanCR + vignetteType + meanpercdiff + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+loo(bayesmod.comb)$estimates
+
+#check interaction
+bayesmod.comb.int <- brm(meanAA ~ meanCR + vignetteType*meanpercdiff + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+loo(bayesmod.comb.int)$estimates
+
+## WITHOUT G1 ##
+bayesmods.diff1 <- list()
+
+bayesmods.diff1[[1]] <- brm(meanAA ~ 1, data = d_noG1, cores = 4, seed = 1298)
+bayesmods.diff1[[2]] <- brm(meanAA ~ vignetteType + 1, data = d_noG1, cores = 4, seed = 1298)
+bayesmods.diff1[[3]] <- brm(meanAA ~ meanpercdiff + 1, data = d_noG1, cores = 4, seed = 1298)
+bayesmods.diff1[[4]] <- brm(meanAA ~ meanpercdiff + vignetteType + 1, data = d_noG1, cores = 4, seed = 1298)
+bayesmods.diff1[[5]] <- brm(meanAA ~ meanpercdiff*vignetteType + 1, data = d_noG1, cores = 4, seed = 1298)
+
+bayesmods.conf1 <- list()
+
+bayesmods.conf1[[1]] <- brm(meanAA ~ meanCR + 1, data = d_noG1, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+bayesmods.conf1[[2]] <- brm(meanAA ~ meanCR + vignetteType + 1, data = d_noG1, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+bayesmods.conf1[[3]] <- brm(meanAA ~ meanCR*vignetteType + 1, data = d_noG1, refresh = 0, open_progress = FALSE, cores = 4, seed = 1298)
+
+## SIMPLE ANSWERS 
+prior_summary(bayesmods.diff1[[2]])
+
+summary(bayesmods.diff1[[1]])
+summary(bayesmods.diff1[[2]])
+summary(bayesmods.diff1[[3]])
+summary(bayesmods.diff1[[4]])
+summary(bayesmods.diff1[[5]])
+
+summary(bayesmods.conf1[[1]])
+summary(bayesmods.conf1[[2]])
+summary(bayesmods.conf1[[3]])
+
+## get LOOIC values
+loo(bayesmods.diff1[[1]])$estimates
+loo(bayesmods.diff1[[2]])$estimates
+loo(bayesmods.diff1[[3]])$estimates
+loo(bayesmods.diff1[[4]])$estimates
+loo(bayesmods.diff1[[5]])$estimates
+
+loo(bayesmods.conf1[[1]])$estimates
+loo(bayesmods.conf1[[2]])$estimates
+loo(bayesmods.conf1[[3]])$estimates
+
+
+bayesmod.comb1 <- brm(meanAA ~ meanCR + vignetteType + meanpercdiff + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+loo(bayesmod.comb1)$estimates
+
+#DO interaction model too
+bayesmod.comb1.int <- brm(meanAA ~ meanCR + vignetteType*meanpercdiff + 1, data = d, refresh = 0,open_progress = FALSE, cores = 4, seed = 1298)
+loo(bayesmod.comb1.int)$estimates
+
+
+```
+
+## Save experiment 2 data for later use 
+```{r save-data}
+exp2d <- d_pass
+save(exp2d, file = 'exp2d.rda')
+
+```
+
+```{r}
+devtools::session_info()
+```

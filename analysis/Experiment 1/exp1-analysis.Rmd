@@ -1,0 +1,390 @@
+---
+title: "Experiment 1 Analysis"
+author: "Joshua White"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+options(round = 4)#sets inline code, and all code to only show 4 decimal places.
+library(tidyverse)
+library(here)
+library(car) 
+library(ordinal)
+library(MASS)
+library(brms)
+library(skimr)
+library(jtools)
+library(ggthemes)
+library(ggpubr)
+library(ggsci)
+
+set.seed(1298)
+```
+
+## Load Packages and set seed for reproducibility
+
+```{r load-packages, eval = FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+options(digits = 3)#sets inline code, and all code to only show 3 decimal places.
+
+library(tidyverse)
+library(here)
+library(car) 
+library(ordinal)
+library(MASS)
+library(brms)
+library(skimr)
+library(jtools)
+library(ggthemes)
+library(ggpubr)
+library(ggsci)
+
+set.seed(1298)
+```
+
+## Import Data
+
+```{r import-data, warning = FALSE}
+d <- read_csv("exp1data.csv", col_types = "ffffffnnfnfc")
+glimpse(d)
+```
+
+## Data Wrangling
+
+#### Recode VignetteAnswer variable, create new variable, and reorder data  
+
+```{r data-wrangling}
+d$vignetteAnswer[d$answerOrder == "A"] <- recode(d$vignetteAnswer[d$answerOrder == "A"], "1 = 3;
+                                                                                          2 = 2;
+                                                                                          3 = 1;
+                                                                                          4 = 0;
+                                                                                          5 = -1;
+                                                                                          6 = -2;
+                                                                                          7 = -3")
+
+d$vignetteAnswer[d$answerOrder == "B"] <- recode(d$vignetteAnswer[d$answerOrder == "B"], "1 = -3;
+                                                                                          2 = -2;
+                                                                                          3 = -1;
+                                                                                          4 = 0;
+                                                                                          5 = 1;
+                                                                                          6 = 2;
+                                                                                          7 = 3")
+
+#reset order of vignette factor from G1 to L12 for easy graphing
+d$vignette <- factor(d$vignette, levels = c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))))
+
+
+d
+```
+
+## Instruction Checks 
+
+```{r instruction-checks}
+# first remove andy's testing data point
+andy.testing <- grep("amy", d$postQuestion2)
+d_andyremoved <- d[-andy.testing,]
+
+#check whether observations fail instruction checks
+instr_fail <- d_andyremoved$postQuestion1 == "incorrect" | d_andyremoved$dummyVignetteAnswer <= 4
+
+#remove data from main dataset and save for possible later analysis (was a particular question more confusing etc?)
+d_removed <- d_andyremoved[instr_fail,]
+d_pass <- d_andyremoved[!instr_fail,]
+
+#inspect responses of those we removed.
+d_removed
+```
+  
+## Quickly Inspect Final Data 
+
+```{r inspect-data}
+# inspect data before exclusions. 
+skim(d_andyremoved)
+
+# inspect data after exclusions. 
+skim(d_pass)
+
+# how many people answered each vignette
+d_pass %>% count(vignette) %>% arrange(n) %>% print(n = Inf)
+
+# get an idea of the type of responses people gave for
+d_pass$postQuestion2[!is.na(d_pass$postQuestion2)] %>% head(n = 50)
+```
+
+## Graph responses
+
+```{r graph}
+
+# make plot
+ggplot(d_pass, aes(x = vignette, y = vignetteAnswer, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, shape = 16) +
+  stat_summary(fun = mean, geom = "bar", alpha = 0.7, col = "black") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.25, size = 0.5, linetype = 1, show.legend = FALSE) +
+  scale_y_continuous(breaks = -3:3, minor_breaks = NULL, limits = (c(-3.10,3.10)),
+                     labels = rev(c("Strongly prefer risk", "Moderately prefer risk", "Slightly prefer risk",
+                                "Indifferent", "Slightly prefer ambiguity", "Moderately prefer ambiguity", "Strongly prefer ambiguity"))) +
+  xlab("Vignette") +
+  ylab("Ambiguiy Aversion") +
+  scale_fill_manual(values = c("red2", "dodgerblue")) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8))
+
+
+#ggsave("figures/exp1graph.png", height = 75, width = 150, units = "mm")
+
+
+```
+
+## Ambiguty aversion by demographics
+
+```{r AA-by-descriptives}
+
+## gender 
+ggplot(d_pass, aes(x = gender, y = vignetteAnswer, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, shape = 16) +
+  stat_summary(fun = mean, geom = "bar", alpha = 0.7, col = "black", position = "dodge") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", position = position_dodge(width = .9), width = 0.25, show.legend = FALSE) +
+  scale_y_continuous(breaks = -3:3, minor_breaks = NULL, limits = (c(-3.10,3.10))) +
+  xlab("Gender") +
+  ylab("Ambiguiy Aversion Rating") +
+  scale_fill_manual(values = c("red2", "dodgerblue")) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12))
+
+t.test(d_pass$vignetteAnswer[d_pass$gender == "female"], 
+       d_pass$vignetteAnswer[d_pass$gender == "male"])
+# t test and graph shows no difference in gender 
+
+## age
+ggplot(d_pass, aes(x = age, y = vignetteAnswer, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, shape = 16) +
+  stat_summary(fun = mean, geom = "bar", alpha = 0.7, col = "black", position = "dodge") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", position = position_dodge(width = .9), width = 0.25, show.legend = FALSE) +
+  scale_y_continuous(breaks = -3:3, minor_breaks = NULL, limits = (c(-3.10,3.10))) +
+  xlab("Age") +
+  ylab("Ambiguiy Aversion Rating") +
+  scale_fill_manual(values = c("red2", "dodgerblue")) +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12))
+
+ggplot(d_pass, aes(x = age, y = vignetteAnswer)) + 
+  geom_jitter(width = 0.25, height = 0.10, alpha = 0.25, show.legend = FALSE, shape = 16) +
+  geom_smooth(method = "loess") +
+  xlab("Age") +
+  ylab("Ambiguiy Aversion Rating") +
+  theme_pubr() + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12))
+
+summary(lm(vignetteAnswer ~ age, data = d_pass)) ## model shows no predictive effect of age
+
+
+```
+
+Ambiguity ratings do not differ as a function of gender or age. 
+
+## Data analysis: Fit ordinal logistic regression models
+
+First, make vignetteAnswer an ordered factor
+```{r order-vignetteAnswer}
+d_pass$vignetteAnswer.ordfac <- ordered(d_pass$vignetteAnswer, levels = c("-3", "-2", "-1", "0", "1", "2", "3"))
+
+```
+
+### Frequentist
+
+```{r frequentist-analysis}
+olm.freq.nopred <-  clm(vignetteAnswer.ordfac ~ 1, data = d_pass, link = "logit") 
+olm.freq.GLpred <-  clm(vignetteAnswer.ordfac ~ vignetteType, data = d_pass, link = "logit") 
+olm.freq.ordpred <- clm(vignetteAnswer.ordfac ~ answerOrder, data = d_pass, link = "logit") 
+olmm.freq <-  clmm(vignetteAnswer.ordfac ~ vignetteType + (1|vignette), data = d_pass, link = "logit", nAGQ = 10) #values between 5 and 10 generally provide accurate maximum likelihood estimates -- documentation
+
+summary(olm.freq.nopred)
+summary(olm.freq.GLpred)
+summary(olm.freq.ordpred)
+summary(olmm.freq)
+
+coef(olm.freq.GLpred)
+
+coef(olmm.freq)
+```
+
+```{r table, results = 'asis'}
+
+exp1table.freq <- data.frame(Model = 1:4, 
+           Description = c("Intercept (i.e., cutpoints) only",
+                          "Intercept (i.e., cutpoints) & Gain-or-Loss condition paramater",
+                          "Intercept (i.e., cutpoints) & Gain-or-Loss condition paramater",
+                          "Intercept (i.e., cutpoints), Gain-or-Loss condition, and random cutpoint parameters by vignette"),
+           AIC = c(AIC(olm.freq.nopred), AIC(olm.freq.GLpred), AIC(olm.freq.ordpred), AIC(olmm.freq)))
+
+library(papaja)
+library(kableExtra)
+
+apa_table(exp1table.freq, digits = 2,
+          caption = 'Final parameter estimates for each model', 
+          note = 'v1')
+
+exp1table.freq
+
+
+```
+
+#### AIC values
+The AIC values for our four different frequentist models are:
+
+* `r AIC(olm.freq.nopred)` for the model with no predictors 
+* `r AIC(olm.freq.GLpred)` for the model with Gain or Loss as a predictor
+* `r AIC(olm.freq.ordpred)` for the model with answer order as a predictor
+* `r AIC(olmm.freq)` for the mixed model with Gain or Loss and a random effect for vignette as predictors
+
+Therefore, the most effective model is the mixed model, showing that there particpant ambiguity aversion is predicted both by whether the vignette was about a gain or a loss, and a random interecpt effect for vignette. The model taking into account answer order as a predictor had the worst Akaike Information Criterion, providing evidence that answer order did not effect participant responses. 
+
+### Bayesian
+
+```{r bayesian-analysis, warning = FALSE}
+olm.bayes.nopred <-  brm(vignetteAnswer.ordfac ~ 1, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE,
+                         cores = 4, seed = 1298)  #to suppress progress printing to screen for .Rmd
+olm.bayes.GLpred <-  brm(vignetteAnswer.ordfac ~ vignetteType, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE,
+                         cores = 4, seed = 1298) 
+olm.bayes.ordpred <- brm(vignetteAnswer.ordfac ~ answerOrder, data = d_pass, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE,
+                         cores = 4, seed = 1298) 
+olmm.bayes <- brm(vignetteAnswer.ordfac ~ vignetteType + (1|vignette), data = d_pass, family = cumulative(link = "logit"), 
+                  refresh = 0, open_progress = FALSE,
+                         cores = 4, seed = 1298) 
+
+
+prior_summary(olmm.bayes)
+
+summary(olm.bayes.nopred)
+summary(olm.bayes.GLpred)
+summary(olm.bayes.ordpred)
+summary(olmm.bayes)
+
+## get LOOIC values
+
+loo(olm.bayes.nopred)
+loo(olm.bayes.GLpred)
+loo(olm.bayes.ordpred)
+loo(olmm.bayes)
+```
+
+#### LOOIC values
+The LOOIC values for our four different Bayesian models are (I was not able to easily extract the AIC from these models):
+
+* `r loo(olm.bayes.nopred)$estimates[3,1]` for the model with no predictors 
+* `r loo(olm.bayes.GLpred)$estimates[3,1]` for the model with Gain or Loss as a predictor
+* `r loo(olm.bayes.ordpred)$estimates[3,1]` for the model with answer order as a predictor
+* `r loo(olmm.bayes)$estimates[3,1]` for the mixed model with Gain or Loss and a random effect for vignette as predictors
+
+Therefore, the most effective model is the mixed model, showing that there particpant ambiguity aversion is predicted both by whether the vignette was about a gain or a loss, and a random effect for vignette. The model taking into account answer order as a predictor had the worst WAIC, providing evidence that answer order did not effect participant responses.
+
+## Urn Analysis
+
+### Plot
+
+```{r urn-plot}
+##filter dataset to contain only urn vignettes
+d_pass_urns <- d_pass %>% filter(vignette == "G1" | vignette == "L1")
+
+##plot
+ggplot(d_pass_urns, aes(x = vignette, y = vignetteAnswer, fill = vignetteType)) + 
+  geom_jitter(width = 0.25, height = 0.10) +
+  stat_summary(fun.y=mean, geom="bar", alpha = 0.8) +
+  scale_y_continuous(breaks = -3:3, minor_breaks = NULL, limits = (c(-3.10,3.10))) +
+  ggtitle("Urn Vignette Responses")
+```
+
+### Statistical analyses
+
+#### Frequentist
+```{r frequentist-analysis-urns}
+olm.freq.nopred.urns <-  clm(vignetteAnswer.ordfac ~ 1, data = d_pass_urns, link = "logit")
+olm.freq.GLpred.urns <-  clm(vignetteAnswer.ordfac ~ vignetteType, data = d_pass_urns, link = "logit")
+
+summary(olm.freq.nopred.urns)
+summary(olm.freq.GLpred.urns)
+
+AIC(olm.freq.nopred.urns)
+AIC(olm.freq.GLpred.urns)
+```
+
+#### AIC values
+The AIC values for our two different frequentist models are:
+
+* `r AIC(olm.freq.nopred.urns)` for the model with no predictors 
+* `r AIC(olm.freq.GLpred.urns)` for the model with Gain or Loss as a predictor
+
+These values illustrate that the existing effect is replicated in our findings. Firstly, ambiguity aversion exists in both gains and loss variants of the classic urn task. Secondly, the degree of ambiguity aversion is affected by whether we are discussing domains of loss or gain --- ambiguity aversion is stronger for gains than for losses. 
+
+#### Bayesian
+
+```{r bayesian-analysis-urns, warning = FALSE}
+olm.bayes.nopred.urns <- brm(vignetteAnswer.ordfac ~ 1, data = d_pass_urns, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE, cores = 4,  seed = 1298) 
+olm.bayes.GLpred.urns <- brm(vignetteAnswer.ordfac ~ vignetteType, data = d_pass_urns, family = cumulative(link = "logit"), 
+                         refresh = 0, open_progress = FALSE, cores = 4,  seed = 1298) 
+
+summary(olm.bayes.nopred.urns)
+summary(olm.bayes.GLpred.urns)
+
+loo(olm.bayes.nopred.urns)
+loo(olm.bayes.GLpred.urns)
+
+```
+
+#### LOOIC values
+The LOOIC values for our four different Bayesian models are:
+
+* `r loo(olm.bayes.nopred.urns)$estimates[3,1]` for the model with no predictors 
+* `r loo(olm.bayes.GLpred.urns)$estimates[3,1]` for the model with Gain or Loss as a predictor
+
+These values illustrate that the existing effect is replicated in our findings. Firstly, ambiguity aversion exists in both gains and loss variants of the classic urn task. Secondly, the degree of ambiguity aversion is affected by whether we are discussing domains of loss or gain --- ambiguity aversion is stronger for gains than for losses. 
+
+#### Urn hypothesis tests
+
+```{r t-test}
+## GAIN URN VIGNETTE ##
+
+#ct test
+rstatix::t_test(d_pass[d_pass$vignette == "G1", ], vignetteAnswer ~ 1, mu = 0)
+
+# wilcox test
+rstatix::wilcox_test(d_pass[d_pass$vignette == "G1", ], vignetteAnswer ~ 1, mu = 0, exact = TRUE)
+rstatix::wilcox_effsize(d_pass[d_pass$vignette == "G1", ], vignetteAnswer ~ 1, mu = 0, exact = TRUE)
+
+## LOSS URN VIGNETTE ##
+
+#ct test
+rstatix::t_test(d_pass[d_pass$vignette == "L1", ], vignetteAnswer ~ 1, mu = 0)
+
+# wilcox test
+rstatix::wilcox_test(d_pass[d_pass$vignette == "L1", ], vignetteAnswer ~ 1, mu = 0, exact = TRUE)
+rstatix::wilcox_effsize(d_pass[d_pass$vignette == "L1", ], vignetteAnswer ~ 1, mu = 0, exact = TRUE)
+
+```
+
+### Save data for use in experiment 2
+
+```{r save-data}
+exp1d <- d_pass
+save(exp1d, file = 'exp1d.rda')
+
+
+```
+
+```{r}
+devtools::session_info()
+```

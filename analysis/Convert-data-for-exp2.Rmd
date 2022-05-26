@@ -8,26 +8,33 @@ output: html_document
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(here)
 
 ```
 
 ## Import, clean and save data to put online. 
 
 ```{r import-data, warning = FALSE}
-d <- read_csv("parsedrawresultsexp2.csv", col_types = "ffffffiiiiiififc")
+d <- read_csv(here("experiment2", "data", "parsedrawresultsexp2.csv"), col_types = "ffffffiiiiiififc")
 d <- d %>%
-  select(-X1)
+  dplyr::select(-1)
 
 glimpse(d)
 
 #### change vignette numbers for ease of reading in paper ####
 
 d <- d %>%
-  select(-condition) %>% #remove old condition variables
+  dplyr::select(-condition) %>% #remove old condition variables
   mutate(
     
     #create new variable for vignette type + number
     vignette = paste0(vignetteType, vignetteNumber) %>% factor(), 
+    
+    # all vignettes except G2-G4 (in the original currency) were coded 1-5, rather than 0-4
+    vignetteConfidence = case_when(
+      !vignette %in% c("G2", "G3", "G4") ~ vignetteConfidence - 1L,
+      TRUE ~ vignetteConfidence
+    ),
     
     # Change numbering of vignettes for easier understanding ###
     vignette = recode_factor(vignette,
@@ -38,6 +45,7 @@ d <- d %>%
     
     #reset order from G1 to L12 for easy graphing
     vignette = factor(vignette, levels = c(sprintf("G%d", seq(1:12)), sprintf("L%d", seq(1:12))))
+    
   )
 
 # now change vignetteNumber column too so it matches up with these changes. 
@@ -62,6 +70,7 @@ d$condition <- paste0(d$vignetteType, d$vignetteNumber, d$Start100) %>% factor()
 d <- d[, c(1, 16, 2:4, 15, 5:14)]
 
 glimpse(d)
+
 
 #save datset to put up on osf
 write_csv(d, "exp2data.csv")
